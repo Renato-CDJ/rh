@@ -64,6 +64,7 @@ type Trainee = {
   manager: string;
   day1: TrainingStatus | "Pendente";
   day2: TrainingStatus | "Pendente";
+  trainingDate: string;
 };
 
 const initialCandidates: Candidate[] = [
@@ -105,6 +106,7 @@ const initialTrainees: Trainee[] = [
     manager: "Fernanda Costa",
     day1: "Presente",
     day2: "Pendente",
+    trainingDate: "2026-09-22",
   },
   {
     name: "Camila Ribeiro",
@@ -113,6 +115,7 @@ const initialTrainees: Trainee[] = [
     manager: "João Pedro",
     day1: "Presente",
     day2: "Pendente",
+    trainingDate: "2026-09-22",
   },
   {
     name: "André Martins",
@@ -121,6 +124,7 @@ const initialTrainees: Trainee[] = [
     manager: "Fernanda Costa",
     day1: "Remarcou",
     day2: "Pendente",
+    trainingDate: "2026-09-24",
   },
   {
     name: "Beatriz Lima",
@@ -129,6 +133,7 @@ const initialTrainees: Trainee[] = [
     manager: "Marcos Vinícius",
     day1: "Presente",
     day2: "Pendente",
+    trainingDate: "2026-09-24",
   },
 ];
 
@@ -137,7 +142,7 @@ const navItems: { id: Section; label: string; icon: typeof LayoutDashboard }[] =
     { id: "dashboard", label: "Visão geral", icon: LayoutDashboard },
     { id: "entrevistas", label: "Entrevistas", icon: ClipboardCheck },
     { id: "turmas", label: "Turmas previstas", icon: GraduationCap },
-    { id: "operadores", label: "Operadores", icon: Users },
+    { id: "operadores", label: "Turmas finalizadas", icon: CalendarDays },
   ];
 
 const statusStyles: Record<string, string> = {
@@ -240,6 +245,7 @@ export default function Page() {
               manager: candidate.supervisor || "A definir",
               day1: "Pendente",
               day2: "Pendente",
+              trainingDate: candidate.admissionDate || "2026-09-24",
             },
           ],
     );
@@ -992,7 +998,6 @@ function Operators({
   trainees,
   candidates,
   onView,
-  onUpdateStatus,
 }: {
   trainees: Trainee[];
   candidates: Candidate[];
@@ -1000,28 +1005,38 @@ function Operators({
   onUpdateStatus: (name: string, status: OperatorStatus, date?: string) => void;
 }) {
   const [search, setSearch] = useState("");
-  const approved = trainees.filter((trainee) => trainee.name.toLowerCase().includes(search.toLowerCase()));
-  const statusOptions: OperatorStatus[] = ["Ativo", "Desligado", "INSS", "Afastamento", "Desaparecido"];
+  const [selectedDate, setSelectedDate] = useState("2026-09-22");
+  const filtered = trainees.filter((trainee) =>
+    trainee.trainingDate === selectedDate && trainee.name.toLowerCase().includes(search.toLowerCase()),
+  );
+  const markedDates = [...new Set(trainees.map((trainee) => trainee.trainingDate))];
+  const calendarDays = Array.from({ length: 30 }, (_, index) => index + 1);
+
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-slate-500">Pesquise, consulte e atualize a ficha completa dos profissionais.</p>
-        <h2 className="mt-1 text-2xl font-bold text-[#102a43]">Operadores e negociadores</h2>
+        <p className="text-sm text-slate-500">Consulte as turmas concluídas por data e visualize todos os participantes.</p>
+        <h2 className="mt-1 text-2xl font-bold text-[#102a43]">Turmas finalizadas</h2>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <MiniStat label="Total de operadores" value={String(trainees.length)} icon={Users} />
-        <MiniStat label="Ativos" value={String(trainees.filter((item) => (candidates.find((candidate) => candidate.name === item.name)?.operatorStatus ?? "Ativo") === "Ativo").length)} icon={Check} />
+        <MiniStat label="Turmas no período" value={String(markedDates.length)} icon={CalendarDays} />
+        <MiniStat label="Operadores listados" value={String(trainees.length)} icon={Users} />
         <MiniStat label="Com pendência" value={String(trainees.filter((item) => candidates.find((candidate) => candidate.name === item.name)?.documentationPending === "Sim").length)} icon={AlertCircle} />
       </div>
-      <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-slate-100 p-5 md:flex-row md:items-center md:justify-between">
-          <div><h3 className="font-bold text-[#102a43]">Profissionais aprovados</h3><p className="mt-1 text-xs text-slate-500">Clique no nome para abrir a ficha completa.</p></div>
-          <label className="relative block w-full md:w-72"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar operador" className="h-10 w-full rounded-lg border border-slate-200 pl-9 pr-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10" /></label>
-        </div>
-        <div className="overflow-x-auto"><table className="w-full min-w-[700px] text-left"><thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wide text-slate-400"><tr><th className="px-5 py-3">Profissional</th><th className="px-5 py-3">Função</th><th className="px-5 py-3">Carteira</th><th className="px-5 py-3">Supervisor</th><th className="px-5 py-3">Status</th></tr></thead><tbody className="divide-y divide-slate-100">
-          {approved.map((trainee) => { const candidate = candidates.find((item) => item.name === trainee.name); const operatorStatus = candidate?.operatorStatus ?? "Ativo"; return <tr key={trainee.name} className="text-sm"><td className="px-5 py-4"><button type="button" onClick={() => candidate && onView(candidate)} className="inline-flex items-center gap-2 font-semibold text-slate-700 hover:text-cyan-700 hover:underline">{trainee.name}{candidate?.documentationPending === "Sim" && <span title="Pendência de Documentação" className="rounded-full bg-amber-50 p-1 text-amber-600"><AlertCircle className="h-3.5 w-3.5" /></span>}</button></td><td className="px-5 py-4 text-slate-500">{trainee.role}</td><td className="px-5 py-4 text-slate-500">{trainee.area}</td><td className="px-5 py-4 text-slate-500">{trainee.manager}</td><td className="px-5 py-4"><StatusBadge>{operatorStatus}</StatusBadge></td></tr>; })}
-        </tbody></table></div>
-      </section>
+      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-wide text-cyan-600">Calendário</p><h3 className="mt-1 text-lg font-bold text-[#102a43]">Setembro 2026</h3></div><CalendarDays className="h-5 w-5 text-cyan-600" /></div>
+          <div className="mt-5 grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase text-slate-400">{["D","S","T","Q","Q","S","S"].map((day, index) => <span key={`${day}-${index}`} className="py-1">{day}</span>)}
+            {calendarDays.map((day) => { const date = `2026-09-${String(day).padStart(2, "0")}`; const isMarked = markedDates.includes(date); const isSelected = date === selectedDate; return <button key={date} type="button" onClick={() => isMarked && setSelectedDate(date)} disabled={!isMarked} className={`relative flex h-9 items-center justify-center rounded-lg text-sm transition ${isSelected ? "bg-cyan-600 font-bold text-white" : isMarked ? "bg-cyan-50 font-semibold text-cyan-700 hover:bg-cyan-100" : "text-slate-300"}`}>{day}{isMarked && !isSelected && <span className="absolute bottom-1 h-1 w-1 rounded-full bg-cyan-500" />}</button>; })}
+          </div>
+          <div className="mt-5 flex items-center gap-2 text-xs text-slate-500"><span className="h-2 w-2 rounded-full bg-cyan-500" /> Dias com turma finalizada</div>
+        </section>
+        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-4 border-b border-slate-100 p-5 md:flex-row md:items-center md:justify-between"><div><p className="text-xs font-bold uppercase tracking-wide text-cyan-600">Turma finalizada</p><h3 className="mt-1 text-lg font-bold text-[#102a43]">{new Date(`${selectedDate}T12:00:00`).toLocaleDateString("pt-BR")}</h3><p className="mt-1 text-xs text-slate-500">{filtered.length} operadores nesta turma · clique em um nome para abrir a ficha completa.</p></div><label className="relative block w-full md:w-64"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar operador" className="h-10 w-full rounded-lg border border-slate-200 pl-9 pr-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10" /></label></div>
+          <div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left"><thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wide text-slate-400"><tr><th className="px-5 py-3">Operador</th><th className="px-5 py-3">Carteira</th><th className="px-5 py-3">Cargo</th><th className="px-5 py-3">Presença</th></tr></thead><tbody className="divide-y divide-slate-100">{filtered.map((trainee) => { const candidate = candidates.find((item) => item.name === trainee.name); return <tr key={trainee.name} className="text-sm"><td className="px-5 py-4"><button type="button" onClick={() => candidate && onView(candidate)} className="inline-flex items-center gap-2 font-semibold text-slate-700 hover:text-cyan-700 hover:underline">{trainee.name}{candidate?.documentationPending === "Sim" && <span title="Pendência de Documentação" className="rounded-full bg-amber-50 p-1 text-amber-600"><AlertCircle className="h-3.5 w-3.5" /></span>}</button></td><td className="px-5 py-4 text-slate-500">{trainee.area}</td><td className="px-5 py-4 text-slate-500">{trainee.role}</td><td className="px-5 py-4"><StatusBadge>{trainee.day2 === "Pendente" ? trainee.day1 : trainee.day2}</StatusBadge></td></tr>; })}</tbody></table></div>
+          {!filtered.length && <div className="p-10 text-center text-sm text-slate-500">Nenhum operador encontrado para esta data.</div>}
+        </section>
+      </div>
     </div>
   );
 }
