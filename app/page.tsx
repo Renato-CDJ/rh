@@ -418,9 +418,11 @@ export default function Page() {
           {activeSection === "turmas" && (
             <Classes
               trainees={trainees}
+              candidates={candidates}
               updateStatus={updateStatus}
               statuses={classStatuses}
               onOpenSettings={() => setShowClassSettings(true)}
+              onViewCandidate={setCandidateForViewing}
             />
           )}
         </div>
@@ -1014,11 +1016,14 @@ function Operators({ trainees }: { trainees: Trainee[] }) {
 
 function Classes({
   trainees,
+  candidates,
   updateStatus,
   statuses,
   onOpenSettings,
+  onViewCandidate,
 }: {
   trainees: Trainee[];
+  candidates: Candidate[];
   updateStatus: (
     name: string,
     day: "day1" | "day2",
@@ -1026,6 +1031,7 @@ function Classes({
   ) => void;
   statuses: TrainingStatus[];
   onOpenSettings: () => void;
+  onViewCandidate: (candidate: Candidate) => void;
 }) {
   const [selectedDay, setSelectedDay] = useState<"day1" | "day2">("day1");
   return (
@@ -1125,14 +1131,40 @@ function Classes({
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
                   {index + 1}
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-700">
-                    {trainee.name}
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-400">
-                    {trainee.role} · {trainee.area}
-                  </p>
-                </div>
+                {(() => {
+                  const candidate = candidates.find((item) => item.name === trainee.name);
+                  const hasDocumentationPending = candidate?.documentationPending === "Sim";
+                  return (
+                    <div className="min-w-0">
+                      {candidate ? (
+                        <button
+                          type="button"
+                          onClick={() => onViewCandidate(candidate)}
+                          className="group inline-flex max-w-full items-center gap-2 text-left"
+                          title="Visualizar ficha completa"
+                        >
+                          <span className="truncate text-sm font-semibold text-slate-700 group-hover:text-cyan-700">
+                            {trainee.name}
+                          </span>
+                          {hasDocumentationPending && (
+                            <span
+                              title={`Pendência de Documentação${candidate.documentationDetails ? `: ${candidate.documentationDetails}` : ""}`}
+                              aria-label="Pendência de Documentação"
+                              className="inline-flex shrink-0 rounded-full bg-amber-50 p-1 text-amber-600 ring-1 ring-inset ring-amber-200"
+                            >
+                              <AlertCircle className="h-3.5 w-3.5" />
+                            </span>
+                          )}
+                        </button>
+                      ) : (
+                        <p className="text-sm font-semibold text-slate-700">{trainee.name}</p>
+                      )}
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        {trainee.role} · {trainee.area}
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge>{trainee[selectedDay]}</StatusBadge>
