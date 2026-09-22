@@ -1426,15 +1426,19 @@ function RegistrationModal({
               <button
                 type="button"
                 aria-label="Abrir calendário da data de admissão"
-                onClick={() => {
-                  const input = admissionDateInputRef.current;
-                  if (!input) return;
-                  if (typeof input.showPicker === "function") input.showPicker();
-                  else input.focus();
-                }}
-                className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-r-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
-              >
-                <CalendarDays aria-hidden="true" />
+  onClick={() => {
+  const input = admissionDateInputRef.current;
+  if (!input) return;
+  try {
+  if (typeof input.showPicker === "function") input.showPicker();
+  else input.focus();
+  } catch {
+  input.focus();
+  }
+  }}
+  className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-r-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
+  >
+  <CalendarDays className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           </label>
