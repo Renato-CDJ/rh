@@ -897,7 +897,7 @@ function CandidateTable({
                   {candidate.documentationPending === "Sim" && (
                     <span
                       title="Pendência de Documentação"
-                      aria-label={`Pendência de Documentação${candidate.documentationDetails ? `: ${candidate.documentationDetails}` : ""}`}
+                      aria-label={`Pendência de Documentaç��o${candidate.documentationDetails ? `: ${candidate.documentationDetails}` : ""}`}
                       className="inline-flex rounded-full bg-amber-50 p-1 text-amber-600 ring-1 ring-inset ring-amber-200"
                     >
                       <AlertCircle className="h-3.5 w-3.5" />
@@ -1658,92 +1658,69 @@ function ViewCandidateModal({
     setOperatorStatus(status);
     onUpdateOperatorStatus?.(candidate.name, status, date || undefined);
   };
+  const interviewFields = [
+    ["Nome completo", candidate.name],
+    ["CPF", candidate.cpf],
+    ["Escolaridade", candidate.education],
+    ["Data da entrevista", candidate.date],
+    ["Resultado", candidate.status],
+  ];
+  const registrationFields = [
+    ["Data de admissão", candidate.admissionDate],
+    ["Registro", candidate.role],
+    ["Carteira", candidate.area],
+    ["Turno", candidate.shift],
+    ["Supervisor", candidate.supervisor],
+    ["Coordenador", candidate.coordinator],
+    ["Centro de custo", candidate.costCenter],
+    ["Prédio", candidate.building],
+  ];
+  const FieldList = ({ fields }: { fields: string[][] }) => (
+    <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+      {fields.map(([label, value]) => (
+        <div key={label}>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
+          <p className="mt-1 text-sm font-medium text-slate-700">{value || "Não informado"}</p>
+        </div>
+      ))}
+    </div>
+  );
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 sm:items-center sm:p-6">
-      <div className="w-full max-w-lg rounded-t-2xl bg-white p-6 shadow-2xl sm:rounded-2xl">
-        <div className="flex items-start justify-between">
+      <div className="max-h-[92vh] w-full max-w-3xl overflow-auto rounded-t-2xl bg-white p-6 shadow-2xl sm:rounded-2xl sm:p-7">
+        <div className="flex items-start justify-between border-b border-slate-100 pb-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-600">
-              Ficha preenchida
-            </p>
-            <h2 className="mt-1 text-lg font-bold text-[#102a43]">
-              {candidate.name}
-            </h2>
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-600">Ficha completa</p>
+            <h2 className="mt-1 text-xl font-bold text-[#102a43]">{candidate.name}</h2>
+            <p className="mt-1 text-sm text-slate-500">Entrevista e prosseguimento do cadastro</p>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Fechar"
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <button onClick={onClose} aria-label="Fechar" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
         </div>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {[
-            ["CPF", candidate.cpf],
-            ["Escolaridade", candidate.education],
-            ["Data da entrevista", candidate.date],
-            ["Status", candidate.status],
-          ].map(([label, value]) => (
-            <div key={label}>
-              <p className="text-xs font-semibold text-slate-400">{label}</p>
-              <p className="mt-1 text-sm font-medium text-slate-700">{value}</p>
+        <div className="mt-6 space-y-5">
+          <section className="rounded-xl border border-slate-200 bg-slate-50/70 p-5">
+            <div className="mb-5 flex items-center gap-3">
+              <span className="flex size-8 items-center justify-center rounded-full bg-cyan-100 text-sm font-bold text-cyan-700">1</span>
+              <div><h3 className="font-bold text-[#102a43]">Dados da entrevista</h3><p className="text-xs text-slate-500">Informações preenchidas na primeira etapa</p></div>
             </div>
-          ))}
-          <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <FieldList fields={interviewFields} />
+            {candidate.rejectionReason && <div className="mt-5 rounded-lg border border-rose-200 bg-rose-50 p-3"><p className="text-xs font-bold text-rose-700">Motivo da reprovação</p><p className="mt-1 text-sm text-rose-800">{candidate.rejectionReason}</p></div>}
+          </section>
+          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-5 flex items-center gap-3">
+              <span className="flex size-8 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">2</span>
+              <div><h3 className="font-bold text-[#102a43]">Prosseguir cadastro</h3><p className="text-xs text-slate-500">Dados complementares para admissão e turma prevista</p></div>
+            </div>
+            <FieldList fields={registrationFields} />
+          </section>
+          <section className={`rounded-xl border p-4 ${candidate.documentationPending === "Sim" ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50"}`}>
             <div className="flex items-start gap-3">
-              <div className={`rounded-full p-2 ${candidate.documentationPending === "Sim" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
-                {candidate.documentationPending === "Sim" ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-slate-400">Documentação</p>
-                <p className="mt-1 text-sm font-semibold text-slate-700">
-                  {candidate.documentationPending === "Sim" ? "Pendência de documentação" : "Documentação regularizada"}
-                </p>
-                {candidate.documentationPending === "Sim" && candidate.documentationDetails && (
-                  <p className="mt-1 text-sm text-slate-500">{candidate.documentationDetails}</p>
-                )}
-                {candidate.documentationPending === "Sim" && (
-                  <button
-                    type="button"
-                    onClick={onResolveDocumentation}
-                    className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700"
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                    Marcar como resolvida
-                  </button>
-                )}
-              </div>
+              <div className={`rounded-full p-2 ${candidate.documentationPending === "Sim" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>{candidate.documentationPending === "Sim" ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}</div>
+              <div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Documentação</p><p className="mt-1 text-sm font-semibold text-slate-700">{candidate.documentationPending === "Sim" ? "Pendência de documentação" : "Documentação regularizada"}</p>{candidate.documentationPending === "Sim" && candidate.documentationDetails && <p className="mt-1 text-sm text-slate-500">{candidate.documentationDetails}</p>}{candidate.documentationPending === "Sim" && <button type="button" onClick={onResolveDocumentation} className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"><Check className="h-3.5 w-3.5" />Marcar como resolvida</button>}</div>
             </div>
-          </div>
-          {candidate.rejectionReason && (
-            <div className="sm:col-span-2">
-              <p className="text-xs font-semibold text-slate-400">
-                Motivo da reprovação
-              </p>
-              <p className="mt-1 text-sm text-slate-700">
-                {candidate.rejectionReason}
-              </p>
-            </div>
-          )}
-          {onUpdateOperatorStatus && candidate.status === "Aprovado" && (
-            <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold text-slate-400">Situação do operador</p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <select value={operatorStatus} onChange={(event) => saveOperatorStatus(event.target.value as OperatorStatus)} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700">
-                  {(["Ativo", "Desligado", "INSS", "Afastamento", "Desaparecido"] as OperatorStatus[]).map((status) => <option key={status}>{status}</option>)}
-                </select>
-                {operatorStatus === "Desligado" && <label className="text-xs font-semibold text-slate-600">Data de desligamento<input type="date" value={terminationDate} onChange={(event) => { setTerminationDate(event.target.value); saveOperatorStatus("Desligado", event.target.value); }} className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal" /></label>}
-              </div>
-            </div>
-          )}
+          </section>
+          {onUpdateOperatorStatus && candidate.status === "Aprovado" && <section className="rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Situação do operador</p><div className="mt-3 grid gap-3 sm:grid-cols-2"><select value={operatorStatus} onChange={(event) => saveOperatorStatus(event.target.value as OperatorStatus)} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700">{(["Ativo", "Desligado", "INSS", "Afastamento", "Desaparecido"] as OperatorStatus[]).map((status) => <option key={status}>{status}</option>)}</select>{operatorStatus === "Desligado" && <label className="text-xs font-semibold text-slate-600">Data de desligamento<input type="date" value={terminationDate} onChange={(event) => { setTerminationDate(event.target.value); saveOperatorStatus("Desligado", event.target.value); }} className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal" /></label>}</div></section>}
         </div>
-        <button
-          onClick={onClose}
-          className="mt-7 w-full rounded-lg bg-[#102a43] px-4 py-2.5 text-sm font-semibold text-white"
-        >
-          Fechar
-        </button>
+        <button onClick={onClose} className="mt-7 w-full rounded-lg bg-[#102a43] px-4 py-2.5 text-sm font-semibold text-white">Fechar ficha</button>
       </div>
     </div>
   );
