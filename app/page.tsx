@@ -24,7 +24,7 @@ import {
   X,
 } from "lucide-react";
 
-type Section = "dashboard" | "entrevistas" | "operadores" | "turmas" | "buscar";
+type Section = "dashboard" | "capacitacao" | "entrevistas" | "operadores" | "turmas" | "buscar";
 type TrainingStatus =
   | "Presente"
   | "Remarcou"
@@ -147,7 +147,8 @@ const initialTrainees: Trainee[] = [
 
 const navItems: { id: Section; label: string; icon: typeof LayoutDashboard }[] =
   [
-    { id: "dashboard", label: "Visão geral", icon: LayoutDashboard },
+    { id: "dashboard", label: "Visão Geral integração", icon: LayoutDashboard },
+    { id: "capacitacao", label: "Visão geral Capacitação", icon: GraduationCap },
     { id: "entrevistas", label: "Entrevistas", icon: ClipboardCheck },
     { id: "turmas", label: "Turmas previstas", icon: GraduationCap },
     { id: "operadores", label: "Turmas finalizadas", icon: CalendarDays },
@@ -469,13 +470,14 @@ export default function Page() {
           </div>
         </header>
         <div className="mx-auto max-w-[1440px] p-5 sm:p-8">
-          {activeSection === "dashboard" && (
-            <Dashboard
-              onNavigate={setActiveSection}
-              setShowInterview={setShowInterview}
-              candidates={candidates}
-              trainees={trainees}
-            />
+{(activeSection === "dashboard" || activeSection === "capacitacao") && (
+          <Dashboard
+          view={activeSection === "capacitacao" ? "training" : "integration"}
+          onNavigate={setActiveSection}
+          setShowInterview={setShowInterview}
+          candidates={candidates}
+          trainees={trainees}
+          />
           )}
           {activeSection === "entrevistas" && (
             <Interviews
@@ -579,11 +581,13 @@ function CalendarPicker({ value, onChange }: { value: string; onChange: (value: 
 }
 
 function Dashboard({
+  view,
   onNavigate,
   setShowInterview,
   candidates,
   trainees,
 }: {
+  view: "integration" | "training";
   onNavigate: (section: Section) => void;
   setShowInterview: (value: boolean) => void;
   candidates: Candidate[];
@@ -604,21 +608,21 @@ function Dashboard({
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm text-slate-500">
-            Acompanhe as etapas de integração em um só lugar.
+            {view === "integration" ? "Acompanhe as etapas de integração em um só lugar." : "Acompanhe os indicadores de capacitação por data."}
           </p>
           <h2 className="mt-1 text-2xl font-bold text-[#102a43]">
-            Visão geral
+            {view === "integration" ? "Visão Geral integração" : "Visão geral Capacitação"}
           </h2>
         </div>
-        <button
+        {view === "integration" && <button
           onClick={() => setShowInterview(true)}
           className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#102a43] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1c4465]"
         >
           <Plus className="h-4 w-4" />
           Nova entrevista
-        </button>
+        </button>}
       </div>
-      <section>
+      {view === "integration" && <section>
         <div className="mb-4"><p className="text-xs font-bold uppercase tracking-wide text-cyan-700">Entrevistas e turmas</p><h3 className="mt-1 text-lg font-bold text-[#102a43]">Acompanhamento do processo seletivo</h3><p className="mt-1 text-sm text-slate-500">Indicadores gerais de entrevistas, análise e aprovação.</p></div>
         <div className="grid gap-4 sm:grid-cols-3">
         {[
@@ -669,8 +673,8 @@ function Dashboard({
           </div>
         ))}
         </div>
-      </section>
-      <section className="rounded-2xl border border-cyan-100 bg-gradient-to-r from-cyan-50 to-white p-5 shadow-sm">
+      </section>}
+      {view === "training" && <section className="rounded-2xl border border-cyan-100 bg-gradient-to-r from-cyan-50 to-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-wide text-cyan-700">Presença e previsão</p><h3 className="mt-1 text-lg font-bold text-[#102a43]">Insights por data</h3><p className="mt-1 text-sm text-slate-500">Selecione o dia para acompanhar a turma e os presentes.</p></div><CalendarPicker value={selectedDate} onChange={setSelectedDate} /></div>
         <div className="mt-5 grid gap-4 sm:grid-cols-3">{[
           { label: "Previstos", value: selectedTrainees.length, detail: "na turma selecionada", icon: GraduationCap, tone: "blue" },
@@ -678,12 +682,12 @@ function Dashboard({
           { label: "Presentes no 2º dia", value: presentDay2, detail: "presença registrada", icon: Check, tone: "green" },
         ].map(({ label, value, detail, icon: Icon, tone }) => <div key={label} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><div className={`flex h-10 w-10 items-center justify-center rounded-lg ${tone === "green" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"}`}><Icon className="h-5 w-5" /></div><p className="mt-4 text-sm text-slate-500">{label}</p><div className="mt-1 flex items-end gap-2"><p className="text-2xl font-bold text-[#102a43]">{String(value).padStart(2, "0")}</p><span className="mb-1 text-[11px] font-semibold text-slate-400">{detail}</span></div></div>)}
         </div>
-      </section>
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      </section>}
+      {view === "training" && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-start justify-between"><div><h3 className="font-bold text-[#102a43]">Quantidade por turno</h3><p className="mt-1 text-xs text-slate-500">Distribuição dos operadores previstos para {new Date(`${selectedDate}T12:00:00`).toLocaleDateString("pt-BR")}</p></div><Clock3 className="h-5 w-5 text-cyan-600" /></div>
         {shiftEntries.length ? <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{shiftEntries.map(([shift, count]) => <div key={shift} className="rounded-xl border border-slate-100 bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">{shift}</p><p className="mt-1 text-2xl font-bold text-[#102a43]">{count}</p><div className="mt-3 h-2 rounded-full bg-slate-200"><div className="h-2 rounded-full bg-cyan-500" style={{ width: `${Math.max(16, (count / Math.max(selectedTrainees.length, 1)) * 100)}%` }} /></div></div>)}</div> : <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Nenhuma turma prevista para esta data.</p>}
-      </section>
-      <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
+      </section>}
+      {view === "integration" && <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 p-5">
             <div>
@@ -777,7 +781,6 @@ function Dashboard({
             ))}
           </div>
         </section>
-      </div>
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 p-5">
           <div>
@@ -799,6 +802,7 @@ function Dashboard({
           onView={() => {}}
         />
       </section>
+      </div>}
     </div>
   );
 }
