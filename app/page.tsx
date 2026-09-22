@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import {
   AlertCircle,
   ArrowUpRight,
@@ -63,6 +64,27 @@ type ChangeRecord = {
   description: string;
 };
 
+type AppUser = {
+  username: string;
+  password: string;
+  name: string;
+  role: "ADM" | "RH";
+};
+
+const defaultUsers: AppUser[] = [
+  { username: "renjesus", password: "renjesus", name: "Ren Jesus", role: "ADM" },
+];
+
+function readLocal<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const saved = window.localStorage.getItem(key);
+    return saved ? JSON.parse(saved) as T : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 type Trainee = {
   name: string;
   role: string;
@@ -73,82 +95,6 @@ type Trainee = {
   trainingStatus: "Aplicado" | "Pendente";
   trainingDate: string;
 };
-
-const initialCandidates: Candidate[] = [
-  {
-    name: "Mariana Alves",
-    cpf: "***.482.***-09",
-    education: "Ensino médio",
-    date: "20/09/2026",
-    status: "Aguardando",
-  },
-  {
-    name: "Rafael Santos",
-    cpf: "***.127.***-44",
-    education: "Superior completo",
-    date: "20/09/2026",
-    status: "Aprovado",
-    shift: "Manhã",
-  },
-  {
-    name: "Camila Ribeiro",
-    cpf: "***.309.***-71",
-    education: "Ensino médio",
-    date: "19/09/2026",
-    status: "Aprovado",
-    shift: "Tarde",
-  },
-  {
-    name: "Lucas Ferreira",
-    cpf: "***.765.***-18",
-    education: "Superior cursando",
-    date: "19/09/2026",
-    status: "Reprovado",
-  },
-];
-
-const initialTrainees: Trainee[] = [
-  {
-    name: "Rafael Santos",
-    role: "Operador",
-    area: "Carteira Claro",
-    manager: "Fernanda Costa",
-    day1: "Presente",
-    day2: "Pendente",
-    trainingStatus: "Pendente",
-    trainingDate: "2026-09-22",
-  },
-  {
-    name: "Camila Ribeiro",
-    role: "Negociador",
-    area: "Carteira Vivo",
-    manager: "João Pedro",
-    day1: "Presente",
-    day2: "Pendente",
-    trainingStatus: "Pendente",
-    trainingDate: "2026-09-22",
-  },
-  {
-    name: "André Martins",
-    role: "Operador",
-    area: "Carteira Claro",
-    manager: "Fernanda Costa",
-    day1: "Remarcou",
-    day2: "Pendente",
-    trainingStatus: "Pendente",
-    trainingDate: "2026-09-24",
-  },
-  {
-    name: "Beatriz Lima",
-    role: "Operador",
-    area: "Carteira Oi",
-    manager: "Marcos Vinícius",
-    day1: "Presente",
-    day2: "Pendente",
-    trainingStatus: "Pendente",
-    trainingDate: "2026-09-24",
-  },
-];
 
 const navItems: { id: Section; label: string; icon: typeof LayoutDashboard }[] =
   [
@@ -205,7 +151,32 @@ function Field({
   );
 }
 
+function LoginScreen({ users, onLogin, onCreateUser }: { users: AppUser[]; onLogin: (user: AppUser) => void; onCreateUser: (user: AppUser) => void }) {
+  const [mode, setMode] = useState<"login" | "create">("login");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    setError("");
+    if (mode === "login") {
+      const user = users.find((item) => item.username.toLowerCase() === username.trim().toLowerCase() && item.password === password);
+      if (!user) { setError("Usuário ou senha inválidos."); return; }
+      onLogin(user);
+      return;
+    }
+    if (!name.trim() || !username.trim() || password.length < 4) { setError("Preencha nome, usuário e uma senha com pelo menos 4 caracteres."); return; }
+    if (users.some((item) => item.username.toLowerCase() === username.trim().toLowerCase())) { setError("Este usuário já existe."); return; }
+    onCreateUser({ username: username.trim(), password, name: name.trim(), role: "RH" });
+    setMode("login"); setError("Usuário criado. Faça seu acesso."); setPassword("");
+  };
+  return <main className="flex min-h-screen items-center justify-center bg-[#eef4f7] p-4"><div className="grid w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl shadow-slate-300/40 lg:grid-cols-[1.05fr_0.95fr]"><section className="hidden bg-[#102a43] p-10 text-white lg:flex lg:flex-col lg:justify-between"><div><div className="flex items-center gap-3"><div className="flex size-11 items-center justify-center rounded-2xl bg-cyan-400 text-[#102a43]"><LayoutDashboard className="size-6" /></div><span className="text-lg font-bold">Integração Inicial</span></div><div className="mt-24 max-w-md"><p className="text-sm font-bold uppercase tracking-[0.2em] text-cyan-300">Gestão inteligente</p><h1 className="mt-4 text-5xl font-bold leading-tight">Pessoas certas, integradas desde o primeiro dia.</h1><p className="mt-6 text-base leading-7 text-slate-300">Centralize entrevistas, turmas, capacitação e acompanhamento dos operadores em um único ambiente.</p></div></div><p className="text-sm text-slate-400">Acesso seguro para equipes de RH</p></section><section className="p-7 sm:p-12"><div className="mx-auto max-w-md"><div className="lg:hidden"><div className="flex size-11 items-center justify-center rounded-2xl bg-cyan-500 text-white"><LayoutDashboard className="size-6" /></div></div><p className="mt-8 text-sm font-bold uppercase tracking-[0.18em] text-cyan-700">{mode === "login" ? "Bem-vindo de volta" : "Novo acesso"}</p><h2 className="mt-3 text-3xl font-bold text-[#102a43]">{mode === "login" ? "Acesse seu painel" : "Criar usuário"}</h2><p className="mt-2 text-sm text-slate-500">{mode === "login" ? "Entre para acompanhar sua operação." : "Cadastre um acesso para sua equipe de RH."}</p><form onSubmit={submit} className="mt-8 space-y-4">{mode === "create" && <label className="block text-sm font-semibold text-slate-700">Nome completo<input value={name} onChange={(event) => setName(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10" placeholder="Ex.: Maria Souza" /></label>}<label className="block text-sm font-semibold text-slate-700">Usuário<input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10" placeholder="Digite seu usuário" /></label><label className="block text-sm font-semibold text-slate-700">Senha<input value={password} onChange={(event) => setPassword(event.target.value)} type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10" placeholder="Digite sua senha" /></label>{error && <p className={`rounded-lg px-3 py-2 text-sm ${error.includes("criado") ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>{error}</p>}<button type="submit" className="h-11 w-full rounded-xl bg-[#102a43] text-sm font-bold text-white transition hover:bg-[#1d4a6c]">{mode === "login" ? "Entrar no painel" : "Criar usuário"}</button></form><button type="button" onClick={() => { setMode(mode === "login" ? "create" : "login"); setError(""); }} className="mt-5 w-full text-sm font-semibold text-cyan-700 hover:text-cyan-900">{mode === "login" ? "Criar novo usuário" : "Voltar para o login"}</button><div className="mt-8 rounded-xl bg-slate-50 p-3 text-xs text-slate-500">Acesso inicial ADM: <strong className="text-slate-700">renjesus</strong> / senha <strong className="text-slate-700">renjesus</strong></div></div></section></div></main>;
+}
+
 export default function Page() {
+  const [users, setUsers] = useState<AppUser[]>(() => readLocal("integracao-users", defaultUsers));
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(() => readLocal<AppUser | null>("integracao-session", null));
   const [activeSection, setActiveSection] = useState<Section>("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showInterview, setShowInterview] = useState(false);
@@ -215,8 +186,8 @@ export default function Page() {
     useState<Candidate | null>(null);
   const [candidateForViewing, setCandidateForViewing] =
     useState<Candidate | null>(null);
-  const [candidates, setCandidates] = useState(initialCandidates);
-  const [trainees, setTrainees] = useState(initialTrainees);
+  const [candidates, setCandidates] = useState<Candidate[]>(() => readLocal("integracao-candidates", []));
+  const [trainees, setTrainees] = useState<Trainee[]>(() => readLocal("integracao-trainees", []));
   const [query, setQuery] = useState("");
   const [classStatuses, setClassStatuses] = useState<TrainingStatus[]>([
     "Presente",
@@ -230,6 +201,11 @@ export default function Page() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [changeHistory, setChangeHistory] = useState<Record<string, ChangeRecord[]>>({});
 
+  useEffect(() => { window.localStorage.setItem("integracao-users", JSON.stringify(users)); }, [users]);
+  useEffect(() => { if (currentUser) window.localStorage.setItem("integracao-session", JSON.stringify(currentUser)); else window.localStorage.removeItem("integracao-session"); }, [currentUser]);
+  useEffect(() => { window.localStorage.setItem("integracao-candidates", JSON.stringify(candidates)); }, [candidates]);
+  useEffect(() => { window.localStorage.setItem("integracao-trainees", JSON.stringify(trainees)); }, [trainees]);
+
   const filteredCandidates = useMemo(
     () =>
       candidates.filter((candidate) =>
@@ -237,6 +213,8 @@ export default function Page() {
       ),
     [candidates, query],
   );
+
+  if (!currentUser) return <LoginScreen users={users} onLogin={setCurrentUser} onCreateUser={(user) => setUsers((items) => [...items, user])} />;
 
   const approveCandidate = (name: string) => {
     const candidate = candidates.find((item) => item.name === name);
@@ -386,30 +364,14 @@ export default function Page() {
             </button>
           ))}
         </nav>
-        <div className="mx-4 mb-5 rounded-xl border border-white/10 bg-white/5 p-4">
-          <div className="mb-3 flex items-center gap-2 text-cyan-200">
-            <Bell className="h-4 w-4" />
-            <span className="text-xs font-semibold">Atenção</span>
-          </div>
-          <p className="text-xs leading-relaxed text-slate-300">
-            A turma <strong className="text-white">Previstos 22/09</strong> está
-            pronta para o controle de presença.
-          </p>
-          <button
-            onClick={() => setActiveSection("turmas")}
-            className="mt-3 text-xs font-bold text-cyan-300 hover:text-cyan-100"
-          >
-            Abrir turma <ArrowUpRight className="ml-1 inline h-3 w-3" />
-          </button>
-        </div>
         <div className="flex items-center gap-3 border-t border-white/10 px-5 py-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f3c969] text-sm font-bold text-[#102a43]">
             AS
           </div>
           <div className="min-w-0">
-            <p className="truncate text-xs font-semibold">Ana Souza</p>
-            <p className="truncate text-[11px] text-slate-400">
-              RH · Administradora
+<p className="truncate text-xs font-semibold">{currentUser.name}</p>
+  <p className="truncate text-[11px] text-slate-400">
+  {currentUser.role} · {currentUser.role === "ADM" ? "Administradora" : "Colaborador"}
             </p>
           </div>
           <Settings2 className="ml-auto h-4 w-4 text-slate-400" />
@@ -439,7 +401,7 @@ export default function Page() {
               </p>
               <h1 className="mt-0.5 text-xl font-bold tracking-tight text-[#102a43]">
                 {activeSection === "dashboard"
-                  ? "Olá, Ana. Bom dia!"
+                  ? `Olá, ${currentUser.name}. Bom dia!`
                   : navItems.find((item) => item.id === activeSection)?.label}
               </h1>
             </div>
@@ -472,9 +434,9 @@ export default function Page() {
                 AS
               </div>
               <span className="text-sm font-semibold text-slate-700">
-                Ana Souza
+                {currentUser.name}
               </span>
-              <ChevronDown className="h-4 w-4 text-slate-400" />
+              <button type="button" onClick={() => setCurrentUser(null)} className="rounded-md px-2 py-1 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-rose-600">Sair</button>
             </div>
           </div>
         </header>
@@ -636,8 +598,8 @@ function Dashboard({
         {[
           {
             label: "Entrevistas no mês",
-            value: "48",
-            detail: "+12% vs. mês anterior",
+            value: candidates.length.toString().padStart(2, "0"),
+            detail: "registros salvos",
             icon: ClipboardCheck,
             tone: "cyan",
           },
@@ -653,8 +615,8 @@ function Dashboard({
           },
           {
             label: "Operadores aprovados",
-            value: "36",
-            detail: "+8 nesta semana",
+            value: candidates.filter((item) => item.status === "Aprovado").length.toString().padStart(2, "0"),
+            detail: "aprovados",
             icon: Users,
             tone: "green",
           },
@@ -714,30 +676,7 @@ function Dashboard({
             </button>
           </div>
           <div className="space-y-1 p-3">
-            <ClassRow
-              day="22"
-              month="SET"
-              title="Previstos 22/09/2026"
-              subtitle="Treinamento · 04 pessoas"
-              status="Hoje"
-              onClick={() => onNavigate("turmas")}
-            />
-            <ClassRow
-              day="24"
-              month="SET"
-              title="Previstos 24/09/2026"
-              subtitle="Treinamento · 08 pessoas"
-              status="Programada"
-              onClick={() => onNavigate("turmas")}
-            />
-            <ClassRow
-              day="29"
-              month="SET"
-              title="Previstos 29/09/2026"
-              subtitle="Treinamento · 06 pessoas"
-              status="Programada"
-              onClick={() => onNavigate("turmas")}
-            />
+            {trainees.length ? trainees.slice(0, 3).map((trainee) => <ClassRow key={trainee.name} day={new Date(`${trainee.trainingDate}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit" })} month={new Date(`${trainee.trainingDate}T12:00:00`).toLocaleDateString("pt-BR", { month: "short" }).replace(".", "").toUpperCase()} title={`Previstos ${new Date(`${trainee.trainingDate}T12:00:00`).toLocaleDateString("pt-BR")}`} subtitle={`Treinamento · ${trainee.name}`} status={trainee.trainingStatus} onClick={() => onNavigate("turmas")} />) : <p className="p-4 text-sm text-slate-500">Nenhuma turma cadastrada.</p>}
           </div>
         </section>
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -751,27 +690,27 @@ function Dashboard({
             {[
               {
                 label: "Entrevistas realizadas",
-                value: 48,
+                value: candidates.length,
                 color: "bg-cyan-500",
                 width: "100%",
               },
               {
                 label: "Aprovados para operação",
-                value: 36,
+                value: candidates.filter((item) => item.status === "Aprovado").length,
                 color: "bg-emerald-500",
-                width: "75%",
+                width: `${candidates.length ? (candidates.filter((item) => item.status === "Aprovado").length / candidates.length) * 100 : 0}%`,
               },
               {
                 label: "Em treinamento",
-                value: 12,
+                value: trainees.length,
                 color: "bg-amber-400",
-                width: "42%",
+                width: `${candidates.length ? (trainees.length / candidates.length) * 100 : 0}%`,
               },
               {
                 label: "Integração concluída",
-                value: 8,
+                value: trainees.filter((item) => item.trainingStatus === "Aplicado").length,
                 color: "bg-blue-500",
-                width: "22%",
+                width: `${trainees.length ? (trainees.filter((item) => item.trainingStatus === "Aplicado").length / trainees.length) * 100 : 0}%`,
               },
             ].map((item) => (
               <div key={item.label}>
@@ -890,9 +829,9 @@ function Interviews({
         </button>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <MiniStat label="Total de fichas" value="48" icon={FileText} />
-        <MiniStat label="Aguardando análise" value="12" icon={Clock3} />
-        <MiniStat label="Aprovados" value="36" icon={Check} />
+        <MiniStat label="Total de fichas" value={candidates.length.toString()} icon={FileText} />
+        <MiniStat label="Aguardando análise" value={candidates.filter((item) => item.status === "Aguardando").length.toString()} icon={Clock3} />
+        <MiniStat label="Aprovados" value={candidates.filter((item) => item.status === "Aprovado").length.toString()} icon={Check} />
       </div>
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
