@@ -567,6 +567,17 @@ export default function Page() {
   );
 }
 
+function CalendarPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [viewDate, setViewDate] = useState(() => new Date(`${value}T12:00:00`));
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthName = viewDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  return <div className="relative"><button type="button" onClick={() => setOpen((current) => !current)} className="inline-flex h-10 items-center gap-2 rounded-lg border border-cyan-200 bg-white px-3 text-sm font-semibold capitalize text-[#102a43] shadow-sm hover:border-cyan-400"><CalendarDays className="h-4 w-4 text-cyan-600" />{new Date(`${value}T12:00:00`).toLocaleDateString("pt-BR")}</button>{open && <div className="absolute right-0 top-12 z-30 w-72 rounded-xl border border-slate-200 bg-white p-4 shadow-xl"><div className="flex items-center justify-between"><button type="button" aria-label="Mês anterior" onClick={() => setViewDate(new Date(year, month - 1, 1))} className="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">‹</button><p className="text-sm font-bold capitalize text-[#102a43]">{monthName}</p><button type="button" aria-label="Próximo mês" onClick={() => setViewDate(new Date(year, month + 1, 1))} className="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">›</button></div><div className="mt-3 grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase text-slate-400">{["D","S","T","Q","Q","S","S"].map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}{Array.from({ length: firstDay }, (_, index) => <span key={`empty-${index}`} />)}{Array.from({ length: daysInMonth }, (_, index) => { const day = index + 1; const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`; const selected = date === value; return <button key={date} type="button" onClick={() => { onChange(date); setOpen(false); }} className={`h-8 rounded-md text-xs ${selected ? "bg-cyan-600 font-bold text-white" : "text-slate-600 hover:bg-cyan-50 hover:text-cyan-700"}`}>{day}</button>; })}</div></div>}</div>;
+}
+
 function Dashboard({
   onNavigate,
   setShowInterview,
@@ -607,11 +618,9 @@ function Dashboard({
           Nova entrevista
         </button>
       </div>
-      <section className="flex flex-col gap-4 rounded-2xl border border-cyan-100 bg-gradient-to-r from-cyan-50 to-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div><p className="text-xs font-bold uppercase tracking-wide text-cyan-700">Insights da integração</p><h3 className="mt-1 text-lg font-bold text-[#102a43]">Acompanhe a turma por data</h3><p className="mt-1 text-sm text-slate-500">Selecione uma data para atualizar os indicadores abaixo.</p></div>
-        <label className="flex items-center gap-3 text-sm font-semibold text-slate-600"><CalendarDays className="h-5 w-5 text-cyan-600" /><span className="sr-only">Filtrar insights por data</span><input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="h-10 rounded-lg border border-cyan-200 bg-white px-3 text-sm font-semibold text-[#102a43] shadow-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10" /></label>
-      </section>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section>
+        <div className="mb-4"><p className="text-xs font-bold uppercase tracking-wide text-cyan-700">Entrevistas e turmas</p><h3 className="mt-1 text-lg font-bold text-[#102a43]">Acompanhamento do processo seletivo</h3><p className="mt-1 text-sm text-slate-500">Indicadores gerais de entrevistas, análise e aprovação.</p></div>
+        <div className="grid gap-4 sm:grid-cols-3">
         {[
           {
             label: "Entrevistas no mês",
@@ -637,20 +646,6 @@ function Dashboard({
             icon: Users,
             tone: "green",
           },
-          {
-            label: "Previstos na data",
-            value: String(selectedTrainees.length).padStart(2, "0"),
-            detail: `${presentDay1} presentes no 1º dia`,
-            icon: GraduationCap,
-            tone: "blue",
-          },
-          {
-            label: "Presentes no 2º dia",
-            value: String(presentDay2).padStart(2, "0"),
-            detail: `${selectedTrainees.length} previstos`,
-            icon: Check,
-            tone: "green",
-          },
         ].map(({ label, value, detail, icon: Icon, tone }) => (
           <div
             key={label}
@@ -673,7 +668,17 @@ function Dashboard({
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      </section>
+      <section className="rounded-2xl border border-cyan-100 bg-gradient-to-r from-cyan-50 to-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-wide text-cyan-700">Presença e previsão</p><h3 className="mt-1 text-lg font-bold text-[#102a43]">Insights por data</h3><p className="mt-1 text-sm text-slate-500">Selecione o dia para acompanhar a turma e os presentes.</p></div><CalendarPicker value={selectedDate} onChange={setSelectedDate} /></div>
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">{[
+          { label: "Previstos", value: selectedTrainees.length, detail: "na turma selecionada", icon: GraduationCap, tone: "blue" },
+          { label: "Presentes no 1º dia", value: presentDay1, detail: "presença registrada", icon: Check, tone: "green" },
+          { label: "Presentes no 2º dia", value: presentDay2, detail: "presença registrada", icon: Check, tone: "green" },
+        ].map(({ label, value, detail, icon: Icon, tone }) => <div key={label} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><div className={`flex h-10 w-10 items-center justify-center rounded-lg ${tone === "green" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"}`}><Icon className="h-5 w-5" /></div><p className="mt-4 text-sm text-slate-500">{label}</p><div className="mt-1 flex items-end gap-2"><p className="text-2xl font-bold text-[#102a43]">{String(value).padStart(2, "0")}</p><span className="mb-1 text-[11px] font-semibold text-slate-400">{detail}</span></div></div>)}
+        </div>
+      </section>
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-start justify-between"><div><h3 className="font-bold text-[#102a43]">Quantidade por turno</h3><p className="mt-1 text-xs text-slate-500">Distribuição dos operadores previstos para {new Date(`${selectedDate}T12:00:00`).toLocaleDateString("pt-BR")}</p></div><Clock3 className="h-5 w-5 text-cyan-600" /></div>
         {shiftEntries.length ? <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{shiftEntries.map(([shift, count]) => <div key={shift} className="rounded-xl border border-slate-100 bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">{shift}</p><p className="mt-1 text-2xl font-bold text-[#102a43]">{count}</p><div className="mt-3 h-2 rounded-full bg-slate-200"><div className="h-2 rounded-full bg-cyan-500" style={{ width: `${Math.max(16, (count / Math.max(selectedTrainees.length, 1)) * 100)}%` }} /></div></div>)}</div> : <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Nenhuma turma prevista para esta data.</p>}
