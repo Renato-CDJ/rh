@@ -1375,15 +1375,16 @@ function Classes({
                     </option>
                   ))}
                 </select>
-                <select
-                  aria-label={`Status do treinamento de ${trainee.name}`}
-                  value={trainee.trainingStatus}
-                  onChange={(event) => updateTrainingStatus(trainee.name, event.target.value as "Aplicado" | "Pendente")}
-                  className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-600 outline-none focus:border-cyan-500"
-                >
-                  <option value="Pendente">Treinamento pendente</option>
-                  <option value="Aplicado">Treinamento aplicado</option>
-                </select>
+                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50">
+                  <input
+                    type="checkbox"
+                    aria-label={`Marcar treinamento como aplicado para ${trainee.name}`}
+                    checked={trainee.trainingStatus === "Aplicado"}
+                    onChange={(event) => updateTrainingStatus(trainee.name, event.target.checked ? "Aplicado" : "Pendente")}
+                    className="size-4 rounded border-slate-300 text-cyan-600 accent-cyan-600 focus:ring-cyan-500"
+                  />
+                  <span>{trainee.trainingStatus === "Aplicado" ? "Treinamento aplicado" : "Treinamento pendente"}</span>
+                </label>
               </div>
             </div>
           ))}
