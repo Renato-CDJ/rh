@@ -843,12 +843,6 @@ function CandidateTable({
   >
   Reprovar
   </button>
-                      <button
-                        onClick={() => onReject?.(candidate)}
-                        className="text-xs font-bold text-rose-600 hover:text-rose-800"
-                      >
-                        Reprovar
-                      </button>
                     </div>
                   ) : candidate.status === "Aprovado" &&
                     !candidate.registrationComplete ? (
