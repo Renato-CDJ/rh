@@ -897,7 +897,7 @@ function CandidateTable({
                   {candidate.documentationPending === "Sim" && (
                     <span
                       title="Pendência de Documentação"
-                      aria-label={`Pendência de Documentaç����o${candidate.documentationDetails ? `: ${candidate.documentationDetails}` : ""}`}
+                      aria-label={`Pendência de Documentaç������o${candidate.documentationDetails ? `: ${candidate.documentationDetails}` : ""}`}
                       className="inline-flex rounded-full bg-amber-50 p-1 text-amber-600 ring-1 ring-inset ring-amber-200"
                     >
                       <AlertCircle className="h-3.5 w-3.5" />
@@ -1414,12 +1414,18 @@ function RegistrationModal({
             <span className="text-xs font-semibold text-slate-600">
               Data de admissão
             </span>
-            <input
-              type="date"
-              value={data.admissionDate}
-              onChange={(e) => set("admissionDate", e.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"
-            />
+            <div className="relative">
+              <input
+                type="date"
+                value={data.admissionDate}
+                onChange={(e) => set("admissionDate", e.target.value)}
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 pr-10 text-sm"
+              />
+              <CalendarDays
+                aria-hidden="true"
+                className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+              />
+            </div>
           </label>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
