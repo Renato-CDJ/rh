@@ -621,8 +621,7 @@ function Dashboard({
         </button>}
       </div>
       {view === "integration" && <section>
-        <div className="mb-4"><p className="text-xs font-bold uppercase tracking-wide text-cyan-700">Entrevistas e turmas</p><h3 className="mt-1 text-lg font-bold text-[#102a43]">Acompanhamento do processo seletivo</h3><p className="mt-1 text-sm text-slate-500">Indicadores gerais de entrevistas, análise e aprovação.</p></div>
-        <div className="grid gap-4 sm:grid-cols-3">
+  <div className="grid gap-4 sm:grid-cols-3">
         {[
           {
             label: "Entrevistas no mês",
