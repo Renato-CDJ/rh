@@ -24,7 +24,7 @@ import {
   X,
 } from "lucide-react";
 
-type Section = "dashboard" | "capacitacao" | "entrevistas" | "operadores" | "turmas" | "buscar";
+type Section = "dashboard" | "capacitacao" | "entrevistas" | "operadores" | "treinados" | "turmas" | "buscar";
 type TrainingStatus =
   | "Presente"
   | "Remarcou"
@@ -70,6 +70,7 @@ type Trainee = {
   manager: string;
   day1: TrainingStatus | "Pendente";
   day2: TrainingStatus | "Pendente";
+  trainingStatus: "Aplicado" | "Pendente";
   trainingDate: string;
 };
 
@@ -114,6 +115,7 @@ const initialTrainees: Trainee[] = [
     manager: "Fernanda Costa",
     day1: "Presente",
     day2: "Pendente",
+    trainingStatus: "Pendente",
     trainingDate: "2026-09-22",
   },
   {
@@ -123,6 +125,7 @@ const initialTrainees: Trainee[] = [
     manager: "João Pedro",
     day1: "Presente",
     day2: "Pendente",
+    trainingStatus: "Pendente",
     trainingDate: "2026-09-22",
   },
   {
@@ -132,6 +135,7 @@ const initialTrainees: Trainee[] = [
     manager: "Fernanda Costa",
     day1: "Remarcou",
     day2: "Pendente",
+    trainingStatus: "Pendente",
     trainingDate: "2026-09-24",
   },
   {
@@ -141,6 +145,7 @@ const initialTrainees: Trainee[] = [
     manager: "Marcos Vinícius",
     day1: "Presente",
     day2: "Pendente",
+    trainingStatus: "Pendente",
     trainingDate: "2026-09-24",
   },
 ];
@@ -151,8 +156,9 @@ const navItems: { id: Section; label: string; icon: typeof LayoutDashboard }[] =
     { id: "capacitacao", label: "Visão geral Capacitação", icon: GraduationCap },
     { id: "entrevistas", label: "Entrevistas", icon: ClipboardCheck },
     { id: "turmas", label: "Turmas previstas", icon: GraduationCap },
-    { id: "operadores", label: "Turmas finalizadas", icon: CalendarDays },
-    { id: "buscar", label: "Buscar operador", icon: Search },
+  { id: "operadores", label: "Turmas finalizadas", icon: CalendarDays },
+  { id: "treinados", label: "Treinados", icon: Check },
+  { id: "buscar", label: "Buscar operador", icon: Search },
   ];
 
 const statusStyles: Record<string, string> = {
@@ -256,6 +262,7 @@ export default function Page() {
               manager: candidate.supervisor || "A definir",
               day1: "Pendente",
               day2: "Pendente",
+              trainingStatus: "Pendente",
               trainingDate: candidate.admissionDate || "2026-09-24",
             },
           ],
@@ -321,15 +328,17 @@ export default function Page() {
     setActiveSection("operadores");
   };
   const updateStatus = (
-    name: string,
-    day: "day1" | "day2",
-    value: TrainingStatus,
+  name: string,
+  day: "day1" | "day2",
+  value: TrainingStatus,
   ) =>
-    setTrainees((items) =>
-      items.map((item) =>
-        item.name === name ? { ...item, [day]: value } : item,
-      ),
-    );
+  setTrainees((items) =>
+  items.map((item) =>
+  item.name === name ? { ...item, [day]: value } : item,
+  ),
+  );
+  const updateTrainingStatus = (name: string, trainingStatus: "Aplicado" | "Pendente") =>
+  setTrainees((items) => items.map((item) => item.name === name ? { ...item, trainingStatus } : item));
   const updateOperatorStatus = (name: string, status: OperatorStatus, terminationDate?: string) => {
     setCandidates((items) => items.map((item) => item.name === name ? { ...item, operatorStatus: status, terminationDate: status === "Desligado" ? terminationDate : undefined } : item));
     setCandidateForViewing((item) => item?.name === name ? { ...item, operatorStatus: status, terminationDate: status === "Desligado" ? terminationDate : undefined } : item);
@@ -492,12 +501,14 @@ export default function Page() {
             />
           )}
           {activeSection === "operadores" && <Operators trainees={trainees} candidates={candidates} onView={setCandidateForViewing} onUpdateStatus={updateOperatorStatus} />}
+          {activeSection === "treinados" && <Trained trainees={trainees} candidates={candidates} onView={setCandidateForViewing} />}
           {activeSection === "buscar" && <OperatorSearch candidates={candidates} history={changeHistory} onUpdateStatus={updateOperatorStatus} onUpdateRegistration={updateRegistrationData} onView={setCandidateForViewing} />}
           {activeSection === "turmas" && (
             <Classes
               trainees={trainees}
               candidates={candidates}
               updateStatus={updateStatus}
+              updateTrainingStatus={updateTrainingStatus}
               statuses={classStatuses}
               onOpenSettings={() => setShowClassSettings(true)}
               onViewCandidate={setCandidateForViewing}
@@ -1182,6 +1193,7 @@ function Classes({
   trainees,
   candidates,
   updateStatus,
+  updateTrainingStatus,
   statuses,
   onOpenSettings,
   onViewCandidate,
@@ -1189,10 +1201,11 @@ function Classes({
   trainees: Trainee[];
   candidates: Candidate[];
   updateStatus: (
-    name: string,
-    day: "day1" | "day2",
-    value: TrainingStatus,
+  name: string,
+  day: "day1" | "day2",
+  value: TrainingStatus,
   ) => void;
+  updateTrainingStatus: (name: string, status: "Aplicado" | "Pendente") => void;
   statuses: TrainingStatus[];
   onOpenSettings: () => void;
   onViewCandidate: (candidate: Candidate) => void;
@@ -1362,11 +1375,31 @@ function Classes({
                     </option>
                   ))}
                 </select>
+                <select
+                  aria-label={`Status do treinamento de ${trainee.name}`}
+                  value={trainee.trainingStatus}
+                  onChange={(event) => updateTrainingStatus(trainee.name, event.target.value as "Aplicado" | "Pendente")}
+                  className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-600 outline-none focus:border-cyan-500"
+                >
+                  <option value="Pendente">Treinamento pendente</option>
+                  <option value="Aplicado">Treinamento aplicado</option>
+                </select>
               </div>
             </div>
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+function Trained({ trainees, candidates, onView }: { trainees: Trainee[]; candidates: Candidate[]; onView: (candidate: Candidate) => void }) {
+  const [filter, setFilter] = useState<"Todos" | "Aplicado" | "Pendente">("Todos");
+  const listed = trainees.filter((trainee) => filter === "Todos" || trainee.trainingStatus === filter);
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm text-slate-500">Acompanhe a situação de aplicação do treinamento por operador.</p><h2 className="mt-1 text-2xl font-bold text-[#102a43]">Treinados</h2></div><div className="flex rounded-lg bg-slate-100 p-1"><button type="button" onClick={() => setFilter("Todos")} className={`rounded-md px-3 py-2 text-xs font-bold ${filter === "Todos" ? "bg-white text-[#102a43] shadow-sm" : "text-slate-500"}`}>Todos</button><button type="button" onClick={() => setFilter("Aplicado")} className={`rounded-md px-3 py-2 text-xs font-bold ${filter === "Aplicado" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500"}`}>Aplicado</button><button type="button" onClick={() => setFilter("Pendente")} className={`rounded-md px-3 py-2 text-xs font-bold ${filter === "Pendente" ? "bg-white text-amber-700 shadow-sm" : "text-slate-500"}`}>Pendente</button></div></div>
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left"><thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wide text-slate-400"><tr><th className="px-5 py-3">Operador</th><th className="px-5 py-3">Carteira</th><th className="px-5 py-3">Cargo</th><th className="px-5 py-3">Turma</th><th className="px-5 py-3">Treinamento</th></tr></thead><tbody className="divide-y divide-slate-100">{listed.map((trainee) => { const candidate = candidates.find((item) => item.name === trainee.name); return <tr key={trainee.name} className="text-sm"><td className="px-5 py-4"><button type="button" onClick={() => candidate && onView(candidate)} className="font-semibold text-slate-700 hover:text-cyan-700 hover:underline">{trainee.name}</button></td><td className="px-5 py-4 text-slate-500">{trainee.area}</td><td className="px-5 py-4 text-slate-500">{trainee.role}</td><td className="px-5 py-4 text-slate-500">{new Date(`${trainee.trainingDate}T12:00:00`).toLocaleDateString("pt-BR")}</td><td className="px-5 py-4"><StatusBadge>{trainee.trainingStatus}</StatusBadge></td></tr>; })}</tbody></table></div>{!listed.length && <p className="p-10 text-center text-sm text-slate-500">Nenhum operador nesta categoria.</p>}</section>
     </div>
   );
 }
