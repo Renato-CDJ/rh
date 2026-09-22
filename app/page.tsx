@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  AlertCircle,
   ArrowUpRight,
   Ban,
   Bell,
@@ -45,6 +46,9 @@ type Candidate = {
   supervisor?: string;
   coordinator?: string;
   building?: "Conselheiro" | "Goitacazes";
+  costCenter?: string;
+  documentationPending?: "Sim" | "Não";
+  documentationDetails?: string;
   registrationComplete?: boolean;
   rejectionReason?: string;
 };
@@ -817,7 +821,18 @@ function CandidateTable({
           {candidates.map((candidate) => (
             <tr key={candidate.name} className="text-sm">
               <td className="px-5 py-4 font-semibold text-slate-700">
-                {candidate.name}
+                <span className="inline-flex items-center gap-2">
+                  {candidate.name}
+                  {candidate.documentationPending === "Sim" && (
+                    <span
+                      title="Pendência de Documentação"
+                      aria-label={`Pendência de Documentação${candidate.documentationDetails ? `: ${candidate.documentationDetails}` : ""}`}
+                      className="inline-flex rounded-full bg-amber-50 p-1 text-amber-600 ring-1 ring-inset ring-amber-200"
+                    >
+                      <AlertCircle className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+                </span>
               </td>
               <td className="px-5 py-4 text-slate-500">{candidate.cpf}</td>
               <td className="px-5 py-4 text-slate-500">
@@ -1277,6 +1292,8 @@ function RegistrationModal({
     coordinator: "",
     building: "Conselheiro" as "Conselheiro" | "Goitacazes",
     costCenter: "ROVERI",
+    documentationPending: "" as "" | "Sim" | "Não",
+    documentationDetails: "",
   });
   const set = (key: string, value: string) =>
     setData((item) => ({ ...item, [key]: value }));
@@ -1391,6 +1408,33 @@ function RegistrationModal({
           </label>
           <Field label="Supervisor" placeholder="Nome do supervisor" />
           <Field label="Coordenador" placeholder="Nome do coordenador" />
+          <label className="space-y-1.5">
+            <span className="text-xs font-semibold text-slate-600">
+              Documentação pendente <span className="font-normal text-slate-400">(opcional)</span>
+            </span>
+            <select
+              value={data.documentationPending}
+              onChange={(e) => set("documentationPending", e.target.value)}
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"
+            >
+              <option value="">Selecione</option>
+              <option value="Não">Não</option>
+              <option value="Sim">Sim</option>
+            </select>
+          </label>
+          {data.documentationPending === "Sim" && (
+            <label className="space-y-1.5">
+              <span className="text-xs font-semibold text-slate-600">
+                Descrição da pendência <span className="font-normal text-slate-400">(opcional)</span>
+              </span>
+              <input
+                value={data.documentationDetails}
+                onChange={(e) => set("documentationDetails", e.target.value)}
+                placeholder="Ex.: cópia do documento de identidade"
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10"
+              />
+            </label>
+          )}
           <label className="space-y-1.5 sm:col-span-2">
             <span className="text-xs font-semibold text-slate-600">Prédio</span>
             <select
@@ -1413,7 +1457,16 @@ function RegistrationModal({
             Cancelar
           </button>
           <button
-            onClick={() => onSave(data)}
+            onClick={() =>
+              onSave({
+                ...data,
+                documentationPending: data.documentationPending || undefined,
+                documentationDetails:
+                  data.documentationPending === "Sim"
+                    ? data.documentationDetails.trim() || undefined
+                    : undefined,
+              })
+            }
             className="rounded-lg bg-[#102a43] px-4 py-2 text-sm font-semibold text-white"
           >
             Salvar e gerar turma
