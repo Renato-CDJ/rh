@@ -87,6 +87,7 @@ const initialCandidates: Candidate[] = [
     education: "Superior completo",
     date: "20/09/2026",
     status: "Aprovado",
+    shift: "Manhã",
   },
   {
     name: "Camila Ribeiro",
@@ -94,6 +95,7 @@ const initialCandidates: Candidate[] = [
     education: "Ensino médio",
     date: "19/09/2026",
     status: "Aprovado",
+    shift: "Tarde",
   },
   {
     name: "Lucas Ferreira",
@@ -576,9 +578,16 @@ function Dashboard({
   candidates: Candidate[];
   trainees: Trainee[];
 }) {
-  const present = trainees.filter(
-    (trainee) => trainee.day1 === "Presente",
-  ).length;
+  const [selectedDate, setSelectedDate] = useState("2026-09-22");
+  const selectedTrainees = trainees.filter((trainee) => trainee.trainingDate === selectedDate);
+  const presentDay1 = selectedTrainees.filter((trainee) => trainee.day1 === "Presente").length;
+  const presentDay2 = selectedTrainees.filter((trainee) => trainee.day2 === "Presente").length;
+  const shifts = selectedTrainees.reduce<Record<string, number>>((summary, trainee) => {
+    const shift = candidates.find((candidate) => candidate.name === trainee.name)?.shift ?? "Não informado";
+    summary[shift] = (summary[shift] ?? 0) + 1;
+    return summary;
+  }, {});
+  const shiftEntries = Object.entries(shifts);
   return (
     <div className="space-y-7">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -598,6 +607,10 @@ function Dashboard({
           Nova entrevista
         </button>
       </div>
+      <section className="flex flex-col gap-4 rounded-2xl border border-cyan-100 bg-gradient-to-r from-cyan-50 to-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div><p className="text-xs font-bold uppercase tracking-wide text-cyan-700">Insights da integração</p><h3 className="mt-1 text-lg font-bold text-[#102a43]">Acompanhe a turma por data</h3><p className="mt-1 text-sm text-slate-500">Selecione uma data para atualizar os indicadores abaixo.</p></div>
+        <label className="flex items-center gap-3 text-sm font-semibold text-slate-600"><CalendarDays className="h-5 w-5 text-cyan-600" /><span className="sr-only">Filtrar insights por data</span><input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="h-10 rounded-lg border border-cyan-200 bg-white px-3 text-sm font-semibold text-[#102a43] shadow-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10" /></label>
+      </section>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
@@ -625,11 +638,18 @@ function Dashboard({
             tone: "green",
           },
           {
-            label: "Treinamento hoje",
-            value: `${present}/04`,
-            detail: "Presentes no 1º dia",
+            label: "Previstos na data",
+            value: String(selectedTrainees.length).padStart(2, "0"),
+            detail: `${presentDay1} presentes no 1º dia`,
             icon: GraduationCap,
             tone: "blue",
+          },
+          {
+            label: "Presentes no 2º dia",
+            value: String(presentDay2).padStart(2, "0"),
+            detail: `${selectedTrainees.length} previstos`,
+            icon: Check,
+            tone: "green",
           },
         ].map(({ label, value, detail, icon: Icon, tone }) => (
           <div
@@ -654,6 +674,10 @@ function Dashboard({
           </div>
         ))}
       </div>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-start justify-between"><div><h3 className="font-bold text-[#102a43]">Quantidade por turno</h3><p className="mt-1 text-xs text-slate-500">Distribuição dos operadores previstos para {new Date(`${selectedDate}T12:00:00`).toLocaleDateString("pt-BR")}</p></div><Clock3 className="h-5 w-5 text-cyan-600" /></div>
+        {shiftEntries.length ? <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{shiftEntries.map(([shift, count]) => <div key={shift} className="rounded-xl border border-slate-100 bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">{shift}</p><p className="mt-1 text-2xl font-bold text-[#102a43]">{count}</p><div className="mt-3 h-2 rounded-full bg-slate-200"><div className="h-2 rounded-full bg-cyan-500" style={{ width: `${Math.max(16, (count / Math.max(selectedTrainees.length, 1)) * 100)}%` }} /></div></div>)}</div> : <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Nenhuma turma prevista para esta data.</p>}
+      </section>
       <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 p-5">
