@@ -51,7 +51,11 @@ type Candidate = {
   documentationDetails?: string;
   registrationComplete?: boolean;
   rejectionReason?: string;
+  operatorStatus?: OperatorStatus;
+  terminationDate?: string;
 };
+
+type OperatorStatus = "Ativo" | "Desligado" | "INSS" | "Afastamento" | "Desaparecido";
 
 type Trainee = {
   name: string;
@@ -202,6 +206,7 @@ export default function Page() {
     "Transferido",
   ]);
   const [showClassSettings, setShowClassSettings] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const filteredCandidates = useMemo(
     () =>
@@ -296,6 +301,10 @@ export default function Page() {
         item.name === name ? { ...item, [day]: value } : item,
       ),
     );
+  const updateOperatorStatus = (name: string, status: OperatorStatus, terminationDate?: string) => {
+    setCandidates((items) => items.map((item) => item.name === name ? { ...item, operatorStatus: status, terminationDate: status === "Desligado" ? terminationDate : undefined } : item));
+    setCandidateForViewing((item) => item?.name === name ? { ...item, operatorStatus: status, terminationDate: status === "Desligado" ? terminationDate : undefined } : item);
+  };
 
   return (
     <div className="min-h-screen bg-[#f6f8fb] text-slate-900">
@@ -394,13 +403,27 @@ export default function Page() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              aria-label="Notificações"
-              className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100"
-            >
-              <Bell className="h-5 w-5" />
-              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-cyan-500" />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Notificações"
+                onClick={() => setShowNotifications((value) => !value)}
+                className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+              >
+                <Bell className="h-5 w-5" />
+                <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-cyan-500" />
+              </button>
+              {showNotifications && (
+                <div className="absolute right-0 top-12 z-20 w-72 rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-[#102a43]">Notificações</p>
+                    <button type="button" onClick={() => setShowNotifications(false)} aria-label="Fechar notificações" className="rounded-md p-1 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+                  </div>
+                  <p className="mt-3 rounded-lg bg-cyan-50 p-3 text-xs leading-relaxed text-cyan-800">A turma Prevista 22/09 está pronta para o controle de presença.</p>
+                  <button type="button" onClick={() => { setActiveSection("turmas"); setShowNotifications(false); }} className="mt-3 text-xs font-bold text-cyan-700 hover:text-cyan-900">Abrir turmas previstas</button>
+                </div>
+              )}
+            </div>
             <div className="hidden h-8 w-px bg-slate-200 sm:block" />
             <div className="hidden items-center gap-2 sm:flex">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3c969] text-xs font-bold text-[#102a43]">
@@ -434,7 +457,7 @@ export default function Page() {
               onRegister={setCandidateForRegistration}
             />
           )}
-          {activeSection === "operadores" && <Operators trainees={trainees} />}
+          {activeSection === "operadores" && <Operators trainees={trainees} candidates={candidates} onView={setCandidateForViewing} onUpdateStatus={updateOperatorStatus} />}
           {activeSection === "turmas" && (
             <Classes
               trainees={trainees}
@@ -490,11 +513,12 @@ export default function Page() {
         />
       )}
       {candidateForViewing && (
- <ViewCandidateModal
-  candidate={candidateForViewing}
-  onClose={() => setCandidateForViewing(null)}
-  onResolveDocumentation={() => resolveDocumentation(candidateForViewing.name)}
-  />
+          <ViewCandidateModal
+            candidate={candidateForViewing}
+            onClose={() => setCandidateForViewing(null)}
+            onResolveDocumentation={() => resolveDocumentation(candidateForViewing.name)}
+            onUpdateOperatorStatus={updateOperatorStatus}
+          />
       )}
       {showClassSettings && (
         <ClassSettingsModal
@@ -964,71 +988,39 @@ function MiniStat({
   );
 }
 
-function Operators({ trainees }: { trainees: Trainee[] }) {
+function Operators({
+  trainees,
+  candidates,
+  onView,
+  onUpdateStatus,
+}: {
+  trainees: Trainee[];
+  candidates: Candidate[];
+  onView: (candidate: Candidate) => void;
+  onUpdateStatus: (name: string, status: OperatorStatus, date?: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const approved = trainees.filter((trainee) => trainee.name.toLowerCase().includes(search.toLowerCase()));
+  const statusOptions: OperatorStatus[] = ["Ativo", "Desligado", "INSS", "Afastamento", "Desaparecido"];
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-slate-500">
-          Visualize os profissionais aprovados e seus responsáveis.
-        </p>
-        <h2 className="mt-1 text-2xl font-bold text-[#102a43]">
-          Operadores e negociadores
-        </h2>
+        <p className="text-sm text-slate-500">Pesquise, consulte e atualize a ficha completa dos profissionais.</p>
+        <h2 className="mt-1 text-2xl font-bold text-[#102a43]">Operadores e negociadores</h2>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <MiniStat label="Total de operadores" value="36" icon={Users} />
-        <MiniStat label="Conselheiro" value="22" icon={LayoutDashboard} />
-        <MiniStat label="Goitacazes" value="14" icon={LayoutDashboard} />
+        <MiniStat label="Total de operadores" value={String(trainees.length)} icon={Users} />
+        <MiniStat label="Ativos" value={String(trainees.filter((item) => (candidates.find((candidate) => candidate.name === item.name)?.operatorStatus ?? "Ativo") === "Ativo").length)} icon={Check} />
+        <MiniStat label="Com pendência" value={String(trainees.filter((item) => candidates.find((candidate) => candidate.name === item.name)?.documentationPending === "Sim").length)} icon={AlertCircle} />
       </div>
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 p-5">
-          <div>
-            <h3 className="font-bold text-[#102a43]">
-              Profissionais aprovados
-            </h3>
-            <p className="mt-1 text-xs text-slate-500">
-              Carteira, liderança e situação de integra��ão
-            </p>
-          </div>
-          <button className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600">
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filtros
-          </button>
+        <div className="flex flex-col gap-4 border-b border-slate-100 p-5 md:flex-row md:items-center md:justify-between">
+          <div><h3 className="font-bold text-[#102a43]">Profissionais aprovados</h3><p className="mt-1 text-xs text-slate-500">Clique no nome para abrir a ficha completa.</p></div>
+          <label className="relative block w-full md:w-72"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar operador" className="h-10 w-full rounded-lg border border-slate-200 pl-9 pr-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10" /></label>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left">
-            <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wide text-slate-400">
-              <tr>
-                <th className="px-5 py-3">Profissional</th>
-                <th className="px-5 py-3">Função</th>
-                <th className="px-5 py-3">Carteira</th>
-                <th className="px-5 py-3">Supervisor</th>
-                <th className="px-5 py-3">1º dia</th>
-                <th className="px-5 py-3">2º dia</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {trainees.map((trainee) => (
-                <tr key={trainee.name} className="text-sm">
-                  <td className="px-5 py-4 font-semibold text-slate-700">
-                    {trainee.name}
-                  </td>
-                  <td className="px-5 py-4 text-slate-500">{trainee.role}</td>
-                  <td className="px-5 py-4 text-slate-500">{trainee.area}</td>
-                  <td className="px-5 py-4 text-slate-500">
-                    {trainee.manager}
-                  </td>
-                  <td className="px-5 py-4">
-                    <StatusBadge>{trainee.day1}</StatusBadge>
-                  </td>
-                  <td className="px-5 py-4">
-                    <StatusBadge>{trainee.day2}</StatusBadge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <div className="overflow-x-auto"><table className="w-full min-w-[820px] text-left"><thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wide text-slate-400"><tr><th className="px-5 py-3">Profissional</th><th className="px-5 py-3">Função</th><th className="px-5 py-3">Carteira</th><th className="px-5 py-3">Supervisor</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Desligamento</th></tr></thead><tbody className="divide-y divide-slate-100">
+          {approved.map((trainee) => { const candidate = candidates.find((item) => item.name === trainee.name); const operatorStatus = candidate?.operatorStatus ?? "Ativo"; return <tr key={trainee.name} className="text-sm"><td className="px-5 py-4"><button type="button" onClick={() => candidate && onView(candidate)} className="inline-flex items-center gap-2 font-semibold text-slate-700 hover:text-cyan-700 hover:underline">{trainee.name}{candidate?.documentationPending === "Sim" && <span title="Pendência de Documentação" className="rounded-full bg-amber-50 p-1 text-amber-600"><AlertCircle className="h-3.5 w-3.5" /></span>}</button></td><td className="px-5 py-4 text-slate-500">{trainee.role}</td><td className="px-5 py-4 text-slate-500">{trainee.area}</td><td className="px-5 py-4 text-slate-500">{trainee.manager}</td><td className="px-5 py-4"><select value={operatorStatus} onChange={(event) => onUpdateStatus(trainee.name, event.target.value as OperatorStatus, candidate?.terminationDate)} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-600"><option>{statusOptions[0]}</option>{statusOptions.slice(1).map((status) => <option key={status}>{status}</option>)}</select></td><td className="px-5 py-4 text-slate-500">{candidate?.terminationDate ? new Date(`${candidate.terminationDate}T00:00:00`).toLocaleDateString("pt-BR") : "—"}</td></tr>; })}
+        </tbody></table></div>
       </section>
     </div>
   );
@@ -1653,11 +1645,19 @@ function ViewCandidateModal({
   candidate,
   onClose,
   onResolveDocumentation,
+  onUpdateOperatorStatus,
 }: {
   candidate: Candidate;
   onClose: () => void;
   onResolveDocumentation: () => void;
+  onUpdateOperatorStatus?: (name: string, status: OperatorStatus, terminationDate?: string) => void;
 }) {
+  const [operatorStatus, setOperatorStatus] = useState<OperatorStatus>(candidate.operatorStatus ?? "Ativo");
+  const [terminationDate, setTerminationDate] = useState(candidate.terminationDate ?? "");
+  const saveOperatorStatus = (status: OperatorStatus, date = terminationDate) => {
+    setOperatorStatus(status);
+    onUpdateOperatorStatus?.(candidate.name, status, date || undefined);
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 sm:items-center sm:p-6">
       <div className="w-full max-w-lg rounded-t-2xl bg-white p-6 shadow-2xl sm:rounded-2xl">
@@ -1724,6 +1724,17 @@ function ViewCandidateModal({
               <p className="mt-1 text-sm text-slate-700">
                 {candidate.rejectionReason}
               </p>
+            </div>
+          )}
+          {onUpdateOperatorStatus && candidate.status === "Aprovado" && (
+            <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold text-slate-400">Situação do operador</p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <select value={operatorStatus} onChange={(event) => saveOperatorStatus(event.target.value as OperatorStatus)} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700">
+                  {(["Ativo", "Desligado", "INSS", "Afastamento", "Desaparecido"] as OperatorStatus[]).map((status) => <option key={status}>{status}</option>)}
+                </select>
+                {operatorStatus === "Desligado" && <label className="text-xs font-semibold text-slate-600">Data de desligamento<input type="date" value={terminationDate} onChange={(event) => { setTerminationDate(event.target.value); saveOperatorStatus("Desligado", event.target.value); }} className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal" /></label>}
+              </div>
             </div>
           )}
         </div>
