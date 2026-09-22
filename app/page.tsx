@@ -1431,11 +1431,8 @@ function RegistrationModal({
   event.preventDefault();
   const input = admissionDateInputRef.current;
   if (!input) return;
-  if (typeof input.showPicker === "function") {
-  input.showPicker();
-  } else {
   input.focus();
-  }
+  input.click();
   }}
   className="absolute right-0 top-0 z-10 flex h-10 w-10 items-center justify-center rounded-r-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
   >
