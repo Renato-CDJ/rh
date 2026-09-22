@@ -233,6 +233,25 @@ export default function Page() {
     );
     setCandidateForRejection(null);
   };
+  const resolveDocumentation = (name: string) => {
+    setCandidates((items) =>
+      items.map((item) =>
+        item.name === name
+          ? {
+              ...item,
+              documentationPending: "Não",
+              documentationDetails: undefined,
+            }
+          : item,
+      ),
+    );
+    setCandidateForViewing((item) =>
+      item?.name === name
+        ? { ...item, documentationPending: "Não", documentationDetails: undefined }
+        : item,
+    );
+  };
+
   const completeRegistration = (
     data: Omit<Candidate, "name" | "cpf" | "education" | "date" | "status">,
     name: string,
@@ -449,10 +468,11 @@ export default function Page() {
         />
       )}
       {candidateForViewing && (
-        <ViewCandidateModal
-          candidate={candidateForViewing}
-          onClose={() => setCandidateForViewing(null)}
-        />
+ <ViewCandidateModal
+  candidate={candidateForViewing}
+  onClose={() => setCandidateForViewing(null)}
+  onResolveDocumentation={() => resolveDocumentation(candidateForViewing.name)}
+  />
       )}
       {showClassSettings && (
         <ClassSettingsModal
@@ -821,7 +841,12 @@ function CandidateTable({
           {candidates.map((candidate) => (
             <tr key={candidate.name} className="text-sm">
               <td className="px-5 py-4 font-semibold text-slate-700">
-                <span className="inline-flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onView?.(candidate)}
+                  className="inline-flex items-center gap-2 text-left transition-colors hover:text-cyan-700 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
+                  aria-label={`Visualizar ficha de ${candidate.name}`}
+                >
                   {candidate.name}
                   {candidate.documentationPending === "Sim" && (
                     <span
@@ -832,7 +857,7 @@ function CandidateTable({
                       <AlertCircle className="h-3.5 w-3.5" />
                     </span>
                   )}
-                </span>
+                </button>
               </td>
               <td className="px-5 py-4 text-slate-500">{candidate.cpf}</td>
               <td className="px-5 py-4 text-slate-500">
@@ -1575,9 +1600,11 @@ function RejectionModal({
 function ViewCandidateModal({
   candidate,
   onClose,
+  onResolveDocumentation,
 }: {
   candidate: Candidate;
   onClose: () => void;
+  onResolveDocumentation: () => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 sm:items-center sm:p-6">
@@ -1611,6 +1638,32 @@ function ViewCandidateModal({
               <p className="mt-1 text-sm font-medium text-slate-700">{value}</p>
             </div>
           ))}
+          <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-start gap-3">
+              <div className={`rounded-full p-2 ${candidate.documentationPending === "Sim" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+                {candidate.documentationPending === "Sim" ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-slate-400">Documentação</p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">
+                  {candidate.documentationPending === "Sim" ? "Pendência de documentação" : "Documentação regularizada"}
+                </p>
+                {candidate.documentationPending === "Sim" && candidate.documentationDetails && (
+                  <p className="mt-1 text-sm text-slate-500">{candidate.documentationDetails}</p>
+                )}
+                {candidate.documentationPending === "Sim" && (
+                  <button
+                    type="button"
+                    onClick={onResolveDocumentation}
+                    className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    Marcar como resolvida
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
           {candidate.rejectionReason && (
             <div className="sm:col-span-2">
               <p className="text-xs font-semibold text-slate-400">
