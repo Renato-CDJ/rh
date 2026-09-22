@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   ArrowUpRight,
@@ -897,7 +897,7 @@ function CandidateTable({
                   {candidate.documentationPending === "Sim" && (
                     <span
                       title="Pendência de Documentação"
-                      aria-label={`Pendência de Documentaç������o${candidate.documentationDetails ? `: ${candidate.documentationDetails}` : ""}`}
+                      aria-label={`Pendência de Documentaç��������o${candidate.documentationDetails ? `: ${candidate.documentationDetails}` : ""}`}
                       className="inline-flex rounded-full bg-amber-50 p-1 text-amber-600 ring-1 ring-inset ring-amber-200"
                     >
                       <AlertCircle className="h-3.5 w-3.5" />
@@ -1352,6 +1352,7 @@ function RegistrationModal({
   const [editingCostCenter, setEditingCostCenter] = useState<string | null>(
     null,
   );
+  const admissionDateInputRef = useRef<HTMLInputElement>(null);
   const [data, setData] = useState({
     admissionDate: "",
     role: "OPERADOR(A) COBRADOR(A)",
@@ -1416,15 +1417,25 @@ function RegistrationModal({
             </span>
             <div className="relative">
               <input
+                ref={admissionDateInputRef}
                 type="date"
                 value={data.admissionDate}
                 onChange={(e) => set("admissionDate", e.target.value)}
                 className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 pr-10 text-sm"
               />
-              <CalendarDays
-                aria-hidden="true"
-                className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400"
-              />
+              <button
+                type="button"
+                aria-label="Abrir calendário da data de admissão"
+                onClick={() => {
+                  const input = admissionDateInputRef.current;
+                  if (!input) return;
+                  if (typeof input.showPicker === "function") input.showPicker();
+                  else input.focus();
+                }}
+                className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-r-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
+              >
+                <CalendarDays aria-hidden="true" />
+              </button>
             </div>
           </label>
           <div className="space-y-1.5">
