@@ -832,7 +832,7 @@ function CandidateTable({
                   {candidate.status === "Aguardando" ? (
                     <div className="flex items-center gap-3">
   <button
-  onClick={() => onApprove?.(candidate)}
+  onClick={() => approveCandidate?.(candidate.name)}
   className="inline-flex items-center rounded-full bg-cyan-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-cyan-700"
   >
   Aprovar ficha
