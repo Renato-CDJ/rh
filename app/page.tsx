@@ -607,9 +607,7 @@ function Dashboard({
     <div className="space-y-7">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm text-slate-500">
-            {view === "integration" ? "Acompanhe as etapas de integração em um só lugar." : "Acompanhe os indicadores de capacitação por data."}
-          </p>
+
           <h2 className="mt-1 text-2xl font-bold text-[#102a43]">
             {view === "integration" ? "Visão Geral integração" : "Visão geral Capacitação"}
           </h2>
