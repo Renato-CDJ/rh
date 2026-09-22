@@ -211,7 +211,10 @@ export default function Page() {
     [candidates, query],
   );
 
-  const approveCandidate = (name: string) =>
+  const approveCandidate = (name: string) => {
+    const candidate = candidates.find((item) => item.name === name);
+    if (!candidate) return;
+
     setCandidates((items) =>
       items.map((item) =>
         item.name === name
@@ -219,6 +222,23 @@ export default function Page() {
           : item,
       ),
     );
+
+    setTrainees((items) =>
+      items.some((item) => item.name === name)
+        ? items
+        : [
+            ...items,
+            {
+              name: candidate.name,
+              role: candidate.role || "A definir",
+              area: candidate.area || "A definir",
+              manager: candidate.supervisor || "A definir",
+              day1: "Pendente",
+              day2: "Pendente",
+            },
+          ],
+    );
+  };
   const rejectCandidate = (name: string, rejectionReason?: string) => {
     setCandidates((items) =>
       items.map((item) =>
