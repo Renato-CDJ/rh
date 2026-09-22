@@ -24,7 +24,7 @@ import {
   X,
 } from "lucide-react";
 
-type Section = "dashboard" | "entrevistas" | "operadores" | "turmas";
+type Section = "dashboard" | "entrevistas" | "operadores" | "turmas" | "buscar";
 type TrainingStatus =
   | "Presente"
   | "Remarcou"
@@ -56,6 +56,12 @@ type Candidate = {
 };
 
 type OperatorStatus = "Ativo" | "Desligado" | "INSS" | "Afastamento" | "Desaparecido";
+
+type ChangeRecord = {
+  id: number;
+  date: string;
+  description: string;
+};
 
 type Trainee = {
   name: string;
@@ -143,6 +149,7 @@ const navItems: { id: Section; label: string; icon: typeof LayoutDashboard }[] =
     { id: "entrevistas", label: "Entrevistas", icon: ClipboardCheck },
     { id: "turmas", label: "Turmas previstas", icon: GraduationCap },
     { id: "operadores", label: "Turmas finalizadas", icon: CalendarDays },
+    { id: "buscar", label: "Buscar operador", icon: Search },
   ];
 
 const statusStyles: Record<string, string> = {
@@ -212,6 +219,7 @@ export default function Page() {
   ]);
   const [showClassSettings, setShowClassSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [changeHistory, setChangeHistory] = useState<Record<string, ChangeRecord[]>>({});
 
   const filteredCandidates = useMemo(
     () =>
@@ -310,6 +318,10 @@ export default function Page() {
   const updateOperatorStatus = (name: string, status: OperatorStatus, terminationDate?: string) => {
     setCandidates((items) => items.map((item) => item.name === name ? { ...item, operatorStatus: status, terminationDate: status === "Desligado" ? terminationDate : undefined } : item));
     setCandidateForViewing((item) => item?.name === name ? { ...item, operatorStatus: status, terminationDate: status === "Desligado" ? terminationDate : undefined } : item);
+    setChangeHistory((items) => ({
+      ...items,
+      [name]: [{ id: Date.now(), date: new Date().toLocaleString("pt-BR"), description: `Status alterado para ${status}${status === "Desligado" && terminationDate ? ` em ${terminationDate}` : ""}` }, ...(items[name] ?? [])],
+    }));
   };
 
   return (
@@ -464,6 +476,7 @@ export default function Page() {
             />
           )}
           {activeSection === "operadores" && <Operators trainees={trainees} candidates={candidates} onView={setCandidateForViewing} onUpdateStatus={updateOperatorStatus} />}
+          {activeSection === "buscar" && <OperatorSearch candidates={candidates} history={changeHistory} onUpdateStatus={updateOperatorStatus} onView={setCandidateForViewing} />}
           {activeSection === "turmas" && (
             <Classes
               trainees={trainees}
@@ -1039,6 +1052,71 @@ function Operators({
       </div>
     </div>
   );
+}
+
+function OperatorSearch({
+  candidates,
+  history,
+  onUpdateStatus,
+  onView,
+}: {
+  candidates: Candidate[];
+  history: Record<string, ChangeRecord[]>;
+  onUpdateStatus: (name: string, status: OperatorStatus, date?: string) => void;
+  onView: (candidate: Candidate) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [selectedName, setSelectedName] = useState<string | null>(null);
+  const [status, setStatus] = useState<OperatorStatus>("Ativo");
+  const [terminationDate, setTerminationDate] = useState("");
+  const matches = candidates.filter((candidate) => candidate.status === "Aprovado" && `${candidate.name} ${candidate.cpf}`.toLowerCase().includes(query.toLowerCase()));
+  const selected = candidates.find((candidate) => candidate.name === selectedName) ?? null;
+
+  const selectOperator = (candidate: Candidate) => {
+    setSelectedName(candidate.name);
+    setStatus(candidate.operatorStatus ?? "Ativo");
+    setTerminationDate(candidate.terminationDate ?? "");
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="text-sm text-slate-500">Consulte, atualize e acompanhe todas as alterações feitas nas fichas.</p>
+        <h2 className="mt-1 text-2xl font-bold text-[#102a43]">Buscar operador</h2>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <label className="relative block">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome ou CPF do operador" className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10" />
+          </label>
+          <div className="mt-4 flex flex-col gap-2">
+            {matches.map((candidate) => (
+              <button key={candidate.name} type="button" onClick={() => selectOperator(candidate)} className={`flex items-center justify-between rounded-xl border p-3 text-left transition ${selectedName === candidate.name ? "border-cyan-400 bg-cyan-50" : "border-slate-100 hover:border-cyan-200 hover:bg-slate-50"}`}>
+                <span><span className="block text-sm font-bold text-[#102a43]">{candidate.name}</span><span className="mt-0.5 block text-xs text-slate-500">{candidate.cpf}</span></span>
+                <StatusBadge>{candidate.operatorStatus ?? "Ativo"}</StatusBadge>
+              </button>
+            ))}
+            {!matches.length && <p className="px-2 py-8 text-center text-sm text-slate-500">Nenhum operador encontrado.</p>}
+          </div>
+        </section>
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          {!selected ? <div className="flex min-h-[360px] flex-col items-center justify-center text-center"><div className="flex size-14 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600"><FileText className="h-6 w-6" /></div><h3 className="mt-4 text-lg font-bold text-[#102a43]">Selecione um operador</h3><p className="mt-1 max-w-sm text-sm text-slate-500">Pesquise pelo nome ou CPF para visualizar a ficha completa e editar os dados.</p></div> : (
+            <div>
+              <div className="flex flex-col justify-between gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-start"><div><p className="text-xs font-bold uppercase tracking-wide text-cyan-600">Ficha completa</p><h3 className="mt-1 text-2xl font-bold text-[#102a43]">{selected.name}</h3><p className="mt-1 text-sm text-slate-500">{selected.cpf} · {selected.education}</p></div><button type="button" onClick={() => onView(selected)} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"><Eye className="h-4 w-4" /> Abrir ficha detalhada</button></div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2"><InfoCard label="Entrevista" value={selected.date} /><InfoCard label="Cargo" value={selected.role ?? "Não informado"} /><InfoCard label="Carteira" value={selected.area ?? "Não informado"} /><InfoCard label="Centro de custo" value={selected.costCenter ?? "Não informado"} /><InfoCard label="Admissão" value={selected.admissionDate ?? "Não informado"} /><InfoCard label="Documentação" value={selected.documentationPending === "Sim" ? `Pendente${selected.documentationDetails ? ` · ${selected.documentationDetails}` : ""}` : "Regularizada"} /></div>
+              <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Atualizar situação</p><div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><select value={status} onChange={(event) => setStatus(event.target.value as OperatorStatus)} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm"><option>Ativo</option><option>Desligado</option><option>INSS</option><option>Afastamento</option><option>Desaparecido</option></select><input type="date" value={terminationDate} onChange={(event) => setTerminationDate(event.target.value)} disabled={status !== "Desligado"} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm disabled:bg-slate-100" /><button type="button" onClick={() => { onUpdateStatus(selected.name, status, terminationDate || undefined); }} className="h-10 rounded-lg bg-[#102a43] px-4 text-sm font-semibold text-white hover:bg-[#1c4465]">Salvar alteração</button></div><p className="mt-2 text-xs text-slate-500">A data de desligamento é usada somente quando o status for Desligado.</p></div>
+              <div className="mt-6"><div className="flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Histórico de alterações</p><span className="text-xs text-slate-400">{(history[selected.name] ?? []).length} registro(s)</span></div><div className="mt-3 flex flex-col gap-2">{(history[selected.name] ?? []).map((entry) => <div key={entry.id} className="rounded-lg border border-slate-100 bg-white p-3"><p className="text-sm font-medium text-slate-700">{entry.description}</p><p className="mt-1 text-xs text-slate-400">{entry.date}</p></div>)}{!(history[selected.name] ?? []).length && <p className="rounded-lg bg-slate-50 p-4 text-sm text-slate-500">Nenhuma alteração registrada nesta sessão.</p>}</div></div>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-xl border border-slate-100 bg-slate-50 p-3"><p className="text-xs font-semibold text-slate-400">{label}</p><p className="mt-1 text-sm font-semibold text-slate-700">{value}</p></div>;
 }
 
 function Classes({
