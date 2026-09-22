@@ -291,6 +291,18 @@ export default function Page() {
     );
   };
 
+  const updateRegistrationData = (
+    name: string,
+    data: Partial<Pick<Candidate, "admissionDate" | "role" | "area" | "shift" | "supervisor" | "coordinator" | "building" | "costCenter" | "documentationPending" | "documentationDetails">>,
+  ) => {
+    setCandidates((items) => items.map((item) => item.name === name ? { ...item, ...data } : item));
+    setCandidateForViewing((item) => item?.name === name ? { ...item, ...data } : item);
+    setChangeHistory((items) => ({
+      ...items,
+      [name]: [{ id: Date.now(), date: new Date().toLocaleString("pt-BR"), description: "Dados de Prosseguir cadastro atualizados" }, ...(items[name] ?? [])],
+    }));
+  };
+
   const completeRegistration = (
     data: Omit<Candidate, "name" | "cpf" | "education" | "date" | "status">,
     name: string,
@@ -476,7 +488,7 @@ export default function Page() {
             />
           )}
           {activeSection === "operadores" && <Operators trainees={trainees} candidates={candidates} onView={setCandidateForViewing} onUpdateStatus={updateOperatorStatus} />}
-          {activeSection === "buscar" && <OperatorSearch candidates={candidates} history={changeHistory} onUpdateStatus={updateOperatorStatus} onView={setCandidateForViewing} />}
+          {activeSection === "buscar" && <OperatorSearch candidates={candidates} history={changeHistory} onUpdateStatus={updateOperatorStatus} onUpdateRegistration={updateRegistrationData} onView={setCandidateForViewing} />}
           {activeSection === "turmas" && (
             <Classes
               trainees={trainees}
@@ -1058,17 +1070,21 @@ function OperatorSearch({
   candidates,
   history,
   onUpdateStatus,
+  onUpdateRegistration,
   onView,
 }: {
   candidates: Candidate[];
   history: Record<string, ChangeRecord[]>;
   onUpdateStatus: (name: string, status: OperatorStatus, date?: string) => void;
+  onUpdateRegistration: (name: string, data: Partial<Pick<Candidate, "admissionDate" | "role" | "area" | "shift" | "supervisor" | "coordinator" | "building" | "costCenter" | "documentationPending" | "documentationDetails">>) => void;
   onView: (candidate: Candidate) => void;
 }) {
   const [query, setQuery] = useState("");
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [status, setStatus] = useState<OperatorStatus>("Ativo");
   const [terminationDate, setTerminationDate] = useState("");
+  const [editingRegistration, setEditingRegistration] = useState(false);
+  const [registrationDraft, setRegistrationDraft] = useState<Partial<Candidate>>({});
   const matches = candidates.filter((candidate) => candidate.status === "Aprovado" && `${candidate.name} ${candidate.cpf}`.toLowerCase().includes(query.toLowerCase()));
   const selected = candidates.find((candidate) => candidate.name === selectedName) ?? null;
 
@@ -1076,6 +1092,8 @@ function OperatorSearch({
     setSelectedName(candidate.name);
     setStatus(candidate.operatorStatus ?? "Ativo");
     setTerminationDate(candidate.terminationDate ?? "");
+    setRegistrationDraft({ admissionDate: candidate.admissionDate, role: candidate.role, area: candidate.area, shift: candidate.shift, supervisor: candidate.supervisor, coordinator: candidate.coordinator, building: candidate.building, costCenter: candidate.costCenter, documentationPending: candidate.documentationPending, documentationDetails: candidate.documentationDetails });
+    setEditingRegistration(false);
   };
 
   return (
@@ -1104,7 +1122,8 @@ function OperatorSearch({
           {!selected ? <div className="flex min-h-[360px] flex-col items-center justify-center text-center"><div className="flex size-14 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600"><FileText className="h-6 w-6" /></div><h3 className="mt-4 text-lg font-bold text-[#102a43]">Selecione um operador</h3><p className="mt-1 max-w-sm text-sm text-slate-500">Pesquise pelo nome ou CPF para visualizar a ficha completa e editar os dados.</p></div> : (
             <div>
               <div className="flex flex-col justify-between gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-start"><div><p className="text-xs font-bold uppercase tracking-wide text-cyan-600">Ficha completa</p><h3 className="mt-1 text-2xl font-bold text-[#102a43]">{selected.name}</h3><p className="mt-1 text-sm text-slate-500">{selected.cpf} · {selected.education}</p></div><button type="button" onClick={() => onView(selected)} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"><Eye className="h-4 w-4" /> Abrir ficha detalhada</button></div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2"><InfoCard label="Entrevista" value={selected.date} /><InfoCard label="Cargo" value={selected.role ?? "Não informado"} /><InfoCard label="Carteira" value={selected.area ?? "Não informado"} /><InfoCard label="Centro de custo" value={selected.costCenter ?? "Não informado"} /><InfoCard label="Admissão" value={selected.admissionDate ?? "Não informado"} /><InfoCard label="Documentação" value={selected.documentationPending === "Sim" ? `Pendente${selected.documentationDetails ? ` · ${selected.documentationDetails}` : ""}` : "Regularizada"} /></div>
+              <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Prosseguir cadastro</p><p className="mt-1 text-xs text-slate-500">Dados de admissão e alocação do operador</p></div><button type="button" onClick={() => setEditingRegistration((value) => !value)} className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">{editingRegistration ? "Cancelar" : "Editar dados"}</button></div>{editingRegistration ? <div className="mt-4 grid gap-3 sm:grid-cols-2">{([["admissionDate", "Data de admissão", "date"], ["role", "Cargo", "text"], ["area", "Carteira", "text"], ["shift", "Turno", "text"], ["supervisor", "Supervisor", "text"], ["coordinator", "Coordenador", "text"], ["costCenter", "Centro de custo", "text"]] as const).map(([key, label, type]) => <label key={key} className="text-xs font-semibold text-slate-600">{label}<input type={type} value={String(registrationDraft[key] ?? "")} onChange={(event) => setRegistrationDraft((draft) => ({ ...draft, [key]: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal" /></label>)}<label className="text-xs font-semibold text-slate-600">Prédio<select value={String(registrationDraft.building ?? "")} onChange={(event) => setRegistrationDraft((draft) => ({ ...draft, building: event.target.value as Candidate["building"] }))} className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal"><option value="">Não informado</option><option>Conselheiro</option><option>Goitacazes</option></select></label><button type="button" onClick={() => { onUpdateRegistration(selected.name, registrationDraft); setEditingRegistration(false); }} className="sm:col-span-2 h-10 rounded-lg bg-emerald-700 px-4 text-sm font-bold text-white hover:bg-emerald-800">Salvar dados do cadastro</button></div> : <div className="mt-4 grid gap-3 sm:grid-cols-2"><InfoCard label="Cargo" value={selected.role ?? "Não informado"} /><InfoCard label="Carteira" value={selected.area ?? "Não informado"} /><InfoCard label="Centro de custo" value={selected.costCenter ?? "Não informado"} /><InfoCard label="Admissão" value={selected.admissionDate ?? "Não informado"} /><InfoCard label="Turno" value={selected.shift ?? "Não informado"} /><InfoCard label="Prédio" value={selected.building ?? "Não informado"} /></div>}</div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2"><InfoCard label="Entrevista" value={selected.date} /><InfoCard label="Documentação" value={selected.documentationPending === "Sim" ? `Pendente${selected.documentationDetails ? ` · ${selected.documentationDetails}` : ""}` : "Regularizada"} /></div>
               <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Atualizar situação</p><div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><select value={status} onChange={(event) => setStatus(event.target.value as OperatorStatus)} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm"><option>Ativo</option><option>Desligado</option><option>INSS</option><option>Afastamento</option><option>Desaparecido</option></select><input type="date" value={terminationDate} onChange={(event) => setTerminationDate(event.target.value)} disabled={status !== "Desligado"} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm disabled:bg-slate-100" /><button type="button" onClick={() => { onUpdateStatus(selected.name, status, terminationDate || undefined); }} className="h-10 rounded-lg bg-[#102a43] px-4 text-sm font-semibold text-white hover:bg-[#1c4465]">Salvar alteração</button></div><p className="mt-2 text-xs text-slate-500">A data de desligamento é usada somente quando o status for Desligado.</p></div>
               <div className="mt-6"><div className="flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Histórico de alterações</p><span className="text-xs text-slate-400">{(history[selected.name] ?? []).length} registro(s)</span></div><div className="mt-3 flex flex-col gap-2">{(history[selected.name] ?? []).map((entry) => <div key={entry.id} className="rounded-lg border border-slate-100 bg-white p-3"><p className="text-sm font-medium text-slate-700">{entry.description}</p><p className="mt-1 text-xs text-slate-400">{entry.date}</p></div>)}{!(history[selected.name] ?? []).length && <p className="rounded-lg bg-slate-50 p-4 text-sm text-slate-500">Nenhuma alteração registrada nesta sessão.</p>}</div></div>
             </div>
