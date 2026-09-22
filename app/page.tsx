@@ -831,12 +831,18 @@ function CandidateTable({
                 <td className="px-5 py-4">
                   {candidate.status === "Aguardando" ? (
                     <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => approveCandidate?.(candidate.name)}
-                        className="text-xs font-bold text-cyan-600 hover:text-cyan-800"
-                      >
-                        Aprovar ficha
-                      </button>
+  <button
+  onClick={() => onApprove?.(candidate)}
+  className="inline-flex items-center rounded-full bg-cyan-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-cyan-700"
+  >
+  Aprovar ficha
+  </button>
+  <button
+  onClick={() => onReject?.(candidate)}
+  className="inline-flex items-center rounded-full bg-rose-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-rose-700"
+  >
+  Reprovar
+  </button>
                       <button
                         onClick={() => onReject?.(candidate)}
                         className="text-xs font-bold text-rose-600 hover:text-rose-800"
