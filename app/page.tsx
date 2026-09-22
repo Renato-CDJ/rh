@@ -1415,30 +1415,20 @@ function RegistrationModal({
             <span className="text-xs font-semibold text-slate-600">
               Data de admissão
             </span>
-            <div className="relative">
-  <input
-  ref={admissionDateInputRef}
-  type="date"
-  value={data.admissionDate}
-  onChange={(e) => set("admissionDate", e.target.value)}
-  className="relative z-0 h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 pr-10 text-sm"
-  />
-  <button
-  type="button"
-  aria-label="Abrir calendário da data de admissão"
-  onMouseDown={(event) => event.preventDefault()}
-  onClick={(event) => {
-  event.preventDefault();
-  const input = admissionDateInputRef.current;
-  if (!input) return;
-  input.focus();
-  input.click();
-  }}
-  className="absolute right-0 top-0 z-10 flex h-10 w-10 items-center justify-center rounded-r-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
-  >
-  <CalendarDays className="size-4" aria-hidden="true" />
-  </button>
-            </div>
+              <div className="relative">
+                <input
+                  ref={admissionDateInputRef}
+                  type="date"
+                  value={data.admissionDate}
+                  onChange={(e) => set("admissionDate", e.target.value)}
+                  aria-label="Data de admissão"
+                  className="relative z-0 h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 text-sm"
+                />
+                <CalendarDays
+                  className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+                  aria-hidden="true"
+                />
+              </div>
           </label>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
