@@ -1676,10 +1676,23 @@ function InterviewModal({
                   ))}
                 </select>
                 {showRegistryManager && (
-                  <div className="mt-2 rounded-lg border border-cyan-100 bg-cyan-50/50 p-3">
-                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-cyan-700">
-                      Gerenciar registros
-                    </p>
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="mb-3 flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-cyan-600">
+                          Configurações
+                        </p>
+                        <p className="mt-1 text-sm font-bold text-[#102a43]">
+                          Gerenciar registros
+                        </p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          Adicione ou remova opções disponíveis.
+                        </p>
+                      </div>
+                      <button type="button" onClick={() => setShowRegistryManager(false)} aria-label="Fechar gerenciamento de registros" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                     <div className="flex gap-2">
                       <input
                         value={newRegistry}
@@ -1759,7 +1772,23 @@ function InterviewModal({
                   ))}
                 </select>
                 {showEducationManager && (
-                  <div className="rounded-lg border border-cyan-100 bg-cyan-50/60 p-3">
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="mb-3 flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-cyan-600">
+                          Configurações
+                        </p>
+                        <p className="mt-1 text-sm font-bold text-[#102a43]">
+                          Gerenciar escolaridade
+                        </p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          Adicione ou remova opções disponíveis.
+                        </p>
+                      </div>
+                      <button type="button" onClick={() => setShowEducationManager(false)} aria-label="Fechar gerenciamento de escolaridade" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                     <div className="mb-2 flex gap-2">
                       <input
                         value={newEducation}
