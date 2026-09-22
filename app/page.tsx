@@ -1416,30 +1416,31 @@ function RegistrationModal({
               Data de admissão
             </span>
             <div className="relative">
-              <input
-                ref={admissionDateInputRef}
-                type="date"
-                value={data.admissionDate}
-                onChange={(e) => set("admissionDate", e.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 pr-10 text-sm"
-              />
-              <button
-                type="button"
-                aria-label="Abrir calendário da data de admissão"
-  onClick={() => {
+  <input
+  ref={admissionDateInputRef}
+  type="date"
+  value={data.admissionDate}
+  onChange={(e) => set("admissionDate", e.target.value)}
+  className="relative z-0 h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 pr-10 text-sm"
+  />
+  <button
+  type="button"
+  aria-label="Abrir calendário da data de admissão"
+  onMouseDown={(event) => event.preventDefault()}
+  onClick={(event) => {
+  event.preventDefault();
   const input = admissionDateInputRef.current;
   if (!input) return;
-  try {
-  if (typeof input.showPicker === "function") input.showPicker();
-  else input.focus();
-  } catch {
+  if (typeof input.showPicker === "function") {
+  input.showPicker();
+  } else {
   input.focus();
   }
   }}
-  className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-r-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
+  className="absolute right-0 top-0 z-10 flex h-10 w-10 items-center justify-center rounded-r-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
   >
-  <CalendarDays className="h-4 w-4" aria-hidden="true" />
-              </button>
+  <CalendarDays className="size-4" aria-hidden="true" />
+  </button>
             </div>
           </label>
           <div className="space-y-1.5">
