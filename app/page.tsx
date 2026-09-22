@@ -1375,16 +1375,19 @@ function Classes({
                     </option>
                   ))}
                 </select>
-                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50">
-                  <input
-                    type="checkbox"
-                    aria-label={`Marcar treinamento como aplicado para ${trainee.name}`}
-                    checked={trainee.trainingStatus === "Aplicado"}
-                    onChange={(event) => updateTrainingStatus(trainee.name, event.target.checked ? "Aplicado" : "Pendente")}
-                    className="size-4 rounded border-slate-300 text-cyan-600 accent-cyan-600 focus:ring-cyan-500"
-                  />
-                  <span>{trainee.trainingStatus === "Aplicado" ? "Treinamento aplicado" : "Treinamento pendente"}</span>
-                </label>
+  <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-emerald-700">
+  <input
+  type="checkbox"
+  aria-label={`Marcar treinamento como aplicado para ${trainee.name}`}
+  checked={trainee.trainingStatus === "Aplicado"}
+  onChange={(event) => updateTrainingStatus(trainee.name, event.target.checked ? "Aplicado" : "Pendente")}
+  className="peer sr-only"
+  />
+  <span className={`flex size-5 items-center justify-center rounded border-2 text-white transition ${trainee.trainingStatus === "Aplicado" ? "border-emerald-600 bg-emerald-600" : "border-slate-300 bg-white"}`}>
+  <Check className={`size-3.5 ${trainee.trainingStatus === "Aplicado" ? "opacity-100" : "opacity-0"}`} strokeWidth={3} />
+  </span>
+  <span className="hidden peer-checked:inline">Aplicado</span>
+  </label>
               </div>
             </div>
           ))}
